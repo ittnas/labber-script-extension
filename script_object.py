@@ -310,9 +310,14 @@ class ScriptObject(ScriptTools.MeasurementObject):
         # In order to designate the channel to the correct insturment, instrument name needs to be extacted.
         # The following approach fails, if the is ' - ' in the insturment name or there is no insturment name at all.
         # This can be the case if nick name is used for the channel. However, in that case it should always exist as a step channel.
+        
+        split_name = channel_name.split(' - ',1)
 
-        instrument_name = channel_name.split(' - ',1)[0]
-        parameter_name = channel_name.split(' - ',1)[1]
+        if len(split_name) > 1:
+                instrument_name = split_name[0]
+                parameter_name = split_name[1]
+        else:
+            raise ValueError('Parameter ' + channel_name + ' your tried to update does not exist.')
         #self.updateInstrumentValue(instrument_name,parameter_name,value)
         self.addChannel(instrument_name,parameter_name)
         set_sweep_parameter(new_channel,value,itemType,step_index)
