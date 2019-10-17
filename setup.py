@@ -10,7 +10,7 @@ config = dict(
     author='Antti Vepsalainen',
     author_email='avepsala@mit.edu',
     url='https://github.com/ittnas/labber-script-extension/',
-    packages=['labber-script-extension'],
+    packages=['labber_script_extension'],
     # python_requires='>=3',
     install_requires=[]
 )
