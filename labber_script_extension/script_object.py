@@ -90,16 +90,36 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
         return self.scenario['channels']
 
+    def getChannelNames(self):
+        """
+        Returns a list of all channel names.
+        """
+        channel_names = []
+        for channel in self.getChannels():
+            if 'name' in channel.keys():
+                channel_names.append(channel['name'])
+            else:
+                channel_names.append(
+                    channel['instrument'] + ' - ' + channel['quantity'])
+        return channel_names
+
+    def getLogChannels(self):
+        """
+        Returns a list of all log channels in the scenario.
+        """
+        log_channels = self.scenario['log_channels']
+        return log_channels
+
     def printStepChannels(self, filter_string=None, instrument_name=None, verbose=False):
         """
         Prints all the step channels which name matches the filter string.
 
         Arguments:
             filter_string (str) -- string which is used to filter the returned step channels.
-            instrument_name (str) -- if not None, only stepChannels that are related to the given insturment string are returned.
+            instrument_name (str) -- if not None, only stepChannels that are related to the given instrument string are returned.
             verbose (bool) -- if True, all available information about the channel is listed.
         """
-        step_channels = getStepChannels()
+        step_channels = self.getStepChannels()
 
         step_channel_names = []
         step_channel_data = []
@@ -118,7 +138,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
                 instrument_name_part = split_name[0]
                 parameter_name = split_name[1]
 
-                if instrument_name is None or instrument_name_part == insturment_name:
+                if instrument_name is None or instrument_name_part == instrument_name:
                     instrument_name_passed = True
             else:
                 parameter_name = split_name[0]
@@ -330,8 +350,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
         step_channels.append(new_channel)
         # print(channel_name)
 
-        # In order to designate the channel to the correct insturment, instrument name needs to be extacted.
-        # The following approach fails, if the is ' - ' in the insturment name or there is no insturment name at all.
+        # In order to designate the channel to the correct instrument, instrument name needs to be extacted.
+        # The following approach fails, if the is ' - ' in the instrument name or there is no instrument name at all.
         # This can be the case if nick name is used for the channel. However, in that case it should always exist as a step channel.
 
         split_name = channel_name.split(' - ', 1)
@@ -450,16 +470,32 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
 
         if isinstance(log_channels, list):
+
+            available_channels = self.getChannelNames()
+            for log_channel in log_channels:
+                if log_channel not in available_channels:
+                    logging.info(
+                        log_channel + ' not found in list of channels. Trying to add it.')
+                    split_name = log_channel.split(' - ', 1)
+                    self.addChannel(split_name[0], split_name[1])
+
             if override:
                 self.scenario['log_channels'] = log_channels
             else:
-                current_log_channels = self.scenario['log_channels']
+                current_log_channels = self.getLogChannels()
                 # self.scenario['log_channels'] = list(set(current_log_channels) | set(log_channels)) # remove duplicates
                 current_log_channels.extend(log_channels)
                 self.scenario['log_channels'] = sorted(
                     set(current_log_channels), key=current_log_channels.index)  # remove duplicates
                 # self.scenario['log_channels'].extend(log_channels)
         else:
+            available_channels = self.getChannelNames()
+            if log_channels not in available_channels:
+                logging.info(
+                    log_channels + ' not found in list of channels. Trying to add it.')
+                split_name = log_channels.split(' - ', 1)
+                self.addChannel(split_name[0], split_name[1])
+
             if override:
                 self.scenario['log_channels'] = [log_channels]
             else:
@@ -471,7 +507,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
             Updates instrument values that are stored in a dictionary.
 
             The dictionary should have the format:
-                insturment_values = {instrument_name:{parameter_name:parameter_value}}
+                instrument_values = {instrument_name:{parameter_name:parameter_value}}
         """
         if not isinstance(instrument_values, dict):
             raise Exception(
