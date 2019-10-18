@@ -261,16 +261,20 @@ class ScriptObject(ScriptTools.MeasurementObject):
                 channel['relation_parameters'] = []
                 for dict_param, dict_value in value.items():
                     if(isinstance(dict_value, dict)):
-                        channel['relation_parameters'].append({
-                            'variable': dict_param,
-                            'channel_name': dict_value['channel_name'],
-                            'use_lookup': True,
-                            'lookup': {
-                                'interp': 'Linear',
-                                'xdata': np.array(dict_value['lookup_x']),
-                                'ydata': np.array(dict_value['lookup_y'])
-                            }
-                        })
+                        if 'interp' in dict_value.keys():
+                            interp = dict_value['interp']
+                        else:
+                            interp = 'Linear'
+                            channel['relation_parameters'].append({
+                                'variable': dict_param,
+                                'channel_name': dict_value['channel_name'],
+                                'use_lookup': True,
+                                'lookup': {
+                                    'interp': interp,
+                                    'xdata': np.array(dict_value['lookup_x']),
+                                    'ydata': np.array(dict_value['lookup_y'])
+                                }
+                            })
                     else:
                         channel['relation_parameters'].append(
                             {'variable': dict_param, 'channel_name': dict_value, 'use_lookup': False, 'lookup': None})
