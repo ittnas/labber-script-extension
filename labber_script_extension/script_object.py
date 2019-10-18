@@ -254,8 +254,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
                 return
             if(itemType == 'EQ'):
                 channel['equation'] = value
-                set_sweep_parameter(channel, value, 'PARAM', {
-                                    'use_relations': True}, index)
+                set_sweep_parameter(channel, {
+                                    'use_relations': True}, 'PARAM', index)
                 return
             if(itemType == 'VARS'):
                 channel['relation_parameters'] = []
@@ -274,8 +274,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
                     else:
                         channel['relation_parameters'].append(
                             {'variable': dict_param, 'channel_name': dict_value, 'use_lookup': False, 'lookup': None})
-                set_sweep_parameter(channel, value, 'PARAM', {
-                    'use_relations': True}, index)
+                set_sweep_parameter(channel, {
+                    'use_relations': True}, 'PARAM', index)
 
                 return
 
@@ -297,39 +297,39 @@ class ScriptObject(ScriptTools.MeasurementObject):
             if(itemType == 'SINGLE'):
                 channel['step_items'][index]['range_type'] = 'Single'
                 channel['step_items'][index]['single'] = value
-                set_sweep_parameter(channel, value, 'PARAM', {
-                    'use_relations': False}, index)
+                set_sweep_parameter(channel, {
+                    'use_relations': False}, 'PARAM', index)
             if(itemType == 'START'):
                 channel['step_items'][index]['range_type'] = 'Start - Stop'
                 channel['step_items'][index]['start'] = value
-                set_sweep_parameter(channel, value, 'PARAM', {
-                    'use_relations': False}, index)
+                set_sweep_parameter(channel, {
+                    'use_relations': False}, 'PARAM', index)
             if(itemType == 'STOP'):
                 channel['step_items'][index]['range_type'] = 'Start - Stop'
                 channel['step_items'][index]['stop'] = value
-                set_sweep_parameter(channel, value, 'PARAM', {
-                    'use_relations': False}, index)
+                set_sweep_parameter(channel, {
+                    'use_relations': False}, 'PARAM', index)
 
             if(itemType == 'SPAN'):
                 channel['step_items'][index]['range_type'] = 'Center - Span'
                 channel['step_items'][index]['span'] = value
-                set_sweep_parameter(channel, value, 'PARAM', {
-                    'use_relations': False}, index)
+                set_sweep_parameter(channel, {
+                    'use_relations': False}, 'PARAM', index)
             if(itemType == 'CENTER'):
                 channel['step_items'][index]['range_type'] = 'Center - Span'
                 channel['step_items'][index]['center'] = value
-                set_sweep_parameter(channel, value, 'PARAM', {
-                    'use_relations': False}, index)
+                set_sweep_parameter(channel, {
+                    'use_relations': False}, 'PARAM', index)
             if(itemType == 'N_PTS'):
                 channel['step_items'][index]['step_type'] = 'Fixed # of pts'
                 channel['step_items'][index]['n_pts'] = int(value)
-                set_sweep_parameter(channel, value, 'PARAM', {
-                    'use_relations': False}, index)
+                set_sweep_parameter(channel, {
+                    'use_relations': False}, 'PARAM', index)
             if(itemType == 'STEP'):
                 channel['step_items'][index]['step_type'] = 'Fixed step'
                 channel['step_items'][index]['step'] = value
-                set_sweep_parameter(channel, value, 'PARAM', {
-                    'use_relations': False}, index)
+                set_sweep_parameter(channel, {
+                    'use_relations': False}, 'PARAM', index)
 
         step_channels = self.scenario['step_channels']
         for current_channel in step_channels:
