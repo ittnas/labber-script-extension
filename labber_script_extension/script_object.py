@@ -101,6 +101,25 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
         return self.scenario['channels']
 
+    def getChannel(self, name):
+        """
+        Get a reference to channel by its name.
+
+        Arguments:
+        name (str) -- Name of the channel.
+
+        Returns:
+        Reference to the channel or None if not found.
+        """
+
+        # if name in self.getChannelNames():
+        for channel in self.getChannels():
+            if channel['instrument'] + ' - ' + channel['quantity'] == name:
+                return channel
+            elif 'name' in channel.keys() and channel['name'] == name:
+                return channel
+        return None
+
     def getChannelNames(self):
         """
         Returns a list of all channel names.
@@ -383,7 +402,33 @@ class ScriptObject(ScriptTools.MeasurementObject):
         # def updateValue():
         #	pass
 
-    def addChannel(self, instrument_name, quantity, name=None):
+    def setSignalConnection(self, target, source):
+        """
+        Connects two signals.
+
+        Only signals with the same types can be used as target - source pairs. This is not checked. Currently does not work if the channel has nick name.
+
+        Arguments:
+        target - Name of the channel that uses the source signal.
+        source - Name of the channel that acts as a source signal for the target.
+        """
+
+        target_channel = self.getChannel(target)
+        source_channel = self.getChannel(source)
+
+        if target_channel is None:
+            self.addChannel(None, None, full_name=target)
+            target_channel = self.getChannel(target)
+        if source_channel is None:
+            self.addChannel(None, None, full_name=source)
+            source_channel = self.getChannel(source)
+
+        target_channel['signal_source'] = source
+
+        print(target_channel)
+        print(source_channel)
+
+    def addChannel(self, instrument_name, quantity, name=None, full_name=None):
         """
         Adds a new channel to the measurement object.
 
@@ -391,7 +436,13 @@ class ScriptObject(ScriptTools.MeasurementObject):
             instrument_name (str) -- name of the instrument the channel belongs to.
             quantity (str) -- the name of the channel in the instrument driver
             name (str), default(None) -- the name which the channel is called
+            full_name (str), default(None) -- The full name of the channel. If not None, this overrides insturment_name and quantity.
         """
+
+        if full_name is not None:
+            split_name = full_name.split(' - ', 1)
+            instrument_name = split_name[0]
+            quantity = split_name[1]
         for channel in self.scenario['channels']:
             if(channel['instrument'] == instrument_name and channel['quantity'] == quantity):
                 return  # Channel already exitst
