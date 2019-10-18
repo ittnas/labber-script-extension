@@ -12,7 +12,7 @@ config = dict(
     url='https://github.com/ittnas/labber-script-extension/',
     packages=['labber_script_extension'],
     # python_requires='>=3',
-    install_requires=[]
+    install_requires=['numpy>=1.7']
 )
 
 setup(**config)
