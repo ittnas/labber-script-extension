@@ -7,7 +7,7 @@ globals_path = r'./'
 globals_file_name = 'globals_test'
 template_path = './test_master3.labber'
 output_directory_root = os.getcwd()
-output_file_name = 'test4'
+output_file_name = 'test5'
 tags = []
 comment = 'no comments'
 local_step_channels = {}
@@ -25,7 +25,9 @@ print(so.getChannelNames())
 print(so.getLogChannels())
 so.setLogChannels('Manual - Value 3')
 print(so.getLogChannels())
-so.setSignalConnection('FE - State vector, QB1', 'multi - Trace - I1')
+#so.setSignalConnection('FE - State vector, QB1', 'multi - Trace - I1')
+so.setSignalConnectionsByDict({'FE - State vector, QB1': 'multi - Trace - I1'})
+
 so.performMeasurement()
 # labber_script_extension.script_object.updateAndPerformMeasurement(template_path, output_directory_root, output_file_name, tags, comment, globals_path,
 #                                                                  globals_file_name, local_step_channels, looped_variables, local_parameters, local_instrument_values, log_channels=log_channels)

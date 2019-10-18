@@ -428,6 +428,16 @@ class ScriptObject(ScriptTools.MeasurementObject):
         print(target_channel)
         print(source_channel)
 
+    def setSignalConnectionsByDict(self, connection_dict):
+        """
+        Creates signal connections from dictionary of target - source pairs.
+
+        Arguments:
+            connection_dict (dict) -- keys are the target channel names, values are the source channel names.
+        """
+        for target, source in connection_dict.items():
+            self.setSignalConnection(target, source)
+
     def addChannel(self, instrument_name, quantity, name=None, full_name=None):
         """
         Adds a new channel to the measurement object.
