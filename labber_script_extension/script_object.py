@@ -35,7 +35,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
         file_dir_path = os.path.dirname(self.file_out)
         # Create subdirectories if they don't exist.
         print(file_dir_path)
-        os.makedirs(file_dir_path, exist_ok=True)
+        if not file_dir_path.strip():
+            os.makedirs(file_dir_path, exist_ok=True)
         print(os.path.splitext(self.file_out)[0])
         ScriptTools.save_scenario_as_binary(self.scenario, temp_file_name)
         # print('Temp file name:' + temp_file_name)
