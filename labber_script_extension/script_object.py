@@ -513,6 +513,33 @@ class ScriptObject(ScriptTools.MeasurementObject):
                 if log_channels not in self.scenario['log_channels']:
                     self.scenario['log_channels'].append(log_channels)
 
+    def updateSettings(self, settings_dict):
+        """
+        Updates the settings of the measurement scenario.
+
+        Arguments:
+        settings_dict (dict) -- dictionary, which keys are the settings names and values are the settings values.
+
+        Available settings and their defaults are:
+
+        'Update instruments at start even if values are unchanged': True,
+        'Send values in parallel': True,
+        'Limit hardware looping to first step item': False,
+        'Number of step items in hardware loop': 1,
+        'Only send signal if source instrument has been updated': True,
+        'Data compression': 4,
+        'Method': 'Nelder-Mead',
+        'Max evaluations': 200,
+        'Minimization function': 'min(y[0])',
+        'Target value': -inf,
+        'Relative tolerance': inf,
+        'opt-Bayesian-Gaussian-Process: Acquisition function': 'gp_hedge',
+        'opt-Bayesian-Gaussian-Process: kappa': 1.96,
+        'opt-Bayesian-Gaussian-Process: xi': 0.1,
+        """
+
+        scenario['settings'].update(settings_dict)
+
     def updateInstrumentValuesByDict(self, instrument_values):
         """
             Updates instrument values that are stored in a dictionary.
