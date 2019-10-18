@@ -32,6 +32,11 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
     def performMeasurement(self, return_data=True):
         temp_file_name = os.path.splitext(self.file_out)[0]+'_tmp.labber'
+        file_dir_path = os.path.dirname(self.file_out)
+        # Create subdirectories if they don't exist.
+        print(file_dir_path)
+        os.makedirs(file_dir_path, exist_ok=True)
+        print(os.path.splitext(self.file_out)[0])
         ScriptTools.save_scenario_as_binary(self.scenario, temp_file_name)
         # print('Temp file name:' + temp_file_name)
         labber_meas_object = ScriptTools.MeasurementObject(
@@ -54,9 +59,15 @@ class ScriptObject(ScriptTools.MeasurementObject):
         # labber_meas_object.setMasterChannel(channel_name)
 
     def setOutputFile(self, filename):
+        """
+        Sets the name of the output file.
+        """
         self.file_out = filename
 
     def rearrangeLog(self, channel_name, *extra_arg):
+        """
+        This is not implemented, yet.
+        """
         raise Exception('Not implemented.')
 
     def updateInstrumentValue(self, instrument_name, parameter_name, value):
