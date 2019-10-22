@@ -6,7 +6,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.environ.get(
-    'LABBERPATH', 'C:\Program Files (x86)\Labber\Script'))  # NOQA: E402
+    'LABBERPATH', r'C:\Program Files (x86)\Labber\Script'))  # NOQA: E402
 import Labber as Labber
 from Labber import ScriptTools
 
@@ -34,10 +34,10 @@ class ScriptObject(ScriptTools.MeasurementObject):
         temp_file_name = os.path.splitext(self.file_out)[0]+'_tmp.labber'
         file_dir_path = os.path.dirname(self.file_out)
         # Create subdirectories if they don't exist.
-        print(file_dir_path)
+        #print(file_dir_path)
         if not file_dir_path.strip():
             os.makedirs(file_dir_path, exist_ok=True)
-        print(os.path.splitext(self.file_out)[0])
+        #print(os.path.splitext(self.file_out)[0])
         ScriptTools.save_scenario_as_binary(self.scenario, temp_file_name)
         # print('Temp file name:' + temp_file_name)
         labber_meas_object = ScriptTools.MeasurementObject(
@@ -430,8 +430,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         target_channel['signal_source'] = source
 
-        print(target_channel)
-        print(source_channel)
+        #print(target_channel)
+        #print(source_channel)
 
     def setSignalConnectionsByDict(self, connection_dict):
         """
@@ -604,7 +604,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
         'opt-Bayesian-Gaussian-Process: xi': 0.1,
         """
 
-        scenario['settings'].update(settings_dict)
+        self.scenario['settings'].update(settings_dict)
 
     def updateInstrumentValuesByDict(self, instrument_values):
         """
