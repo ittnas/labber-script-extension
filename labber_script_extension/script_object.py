@@ -875,6 +875,15 @@ class ScriptObject(ScriptTools.MeasurementObject):
         if tags is not None:
             self.setTags(tags)
 
+    def getOutputPathOfPreviousMeasurement(self):
+        """
+        Returns the full path of the log file created by the previous measurement.
+
+    Returns None if no previous measurement has been performed.
+        """
+        print('Warning! getOutputPathOfPreviousMeasurement() is not implmented correctly at the moment.')
+        return self.file_out + '.hdf5'
+
 
 def updateAndPerformMeasurement_old(template_path, output_directory_root, output_file_name, tags, comment, globals_path, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None):
     now = datetime.datetime.now()
@@ -1018,6 +1027,11 @@ def updateAndPerformMeasurement(template_path, output_directory_root, output_fil
 
 
 def get_full_output_path(output_directory_root, output_file_name):
+    """
+    Returns the full output path of the next measurement.
+
+    The output path returned is the one that is provided to labber API. Labber API might modify the output path. Therefore this function cannot be used to reliably get the path of previous measurements.
+    """
     now = datetime.datetime.now()
     output_directory = output_directory_root + \
         '/{:d}/{:02d}/Data_{:02d}{:02d}/'.format(
