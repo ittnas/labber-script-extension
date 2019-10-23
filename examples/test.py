@@ -21,13 +21,20 @@ so = labber_script_extension.script_object.ScriptObject(
 
 # so.printStepChannels()
 # so.getStepChannels()
-print(so.getChannelNames())
-print(so.getLogChannels())
+# print(so.getChannelNames())
+# print(so.getLogChannels())
 so.setLogChannels('Manual - Value 3')
-print(so.getLogChannels())
+# so.add
+# print(so.getLogChannels())
 #so.setSignalConnection('FE - State vector, QB1', 'multi - Trace - I1')
-so.setSignalConnectionsByDict({'FE - State vector, QB1': 'multi - Trace - I1'})
 
-so.performMeasurement()
+so.setSignalConnectionsByDict({'FE - State vector, QB1': 'multi - Trace - I1'})
+so.getStepChannelNames()
+so.addStepChannel('Manual - Value 1')
+so.getStepChannelNames()
+so.getChannelNames()
+so.getInstrumentValueNames('tau', None, is_case_sensitive=False)
+
+# so.performMeasurement()
 # labber_script_extension.script_object.updateAndPerformMeasurement(template_path, output_directory_root, output_file_name, tags, comment, globals_path,
 #                                                                  globals_file_name, local_step_channels, looped_variables, local_parameters, local_instrument_values, log_channels=log_channels)
