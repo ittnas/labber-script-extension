@@ -879,7 +879,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
         Returns the full path of the log file created by the previous measurement.
 
-    Returns None if no previous measurement has been performed.
+        Returns None if no previous measurement has been performed.
         """
         print('Warning! getOutputPathOfPreviousMeasurement() is not implmented correctly at the moment.')
         return self.file_out + '.hdf5'
