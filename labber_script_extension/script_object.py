@@ -6,11 +6,9 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.environ.get(
-    'LABBERPATH', r'C:\Program Files (x86)\Labber\Script'))  # NOQA: E402
+    'LABBERPATH', r'C:\Program Files\Labber\Script'))  # NOQA: E402
 import Labber as Labber
 from Labber import ScriptTools
-
-# sys.path.append(r'C:\Program Files (x86)\Labber\Script')
 
 
 class ScriptObject(ScriptTools.MeasurementObject):
