@@ -48,7 +48,9 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
             Sets the master channel.
 
-            When updating parameters, all the other channels are referenced
+            When other parameters are updated, creates a lookup table for them with respect to the master channel.
+
+            Does not work correctly at the moment. Would require updateValue to be used.
         """
         # raise Exception('setMasterChannel not implementd.')
         self.master_channel = channel_name
