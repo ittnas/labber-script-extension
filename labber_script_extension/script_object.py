@@ -86,6 +86,16 @@ class ScriptObject(ScriptTools.MeasurementObject):
         logging.warning('Instrument ' + instrument_name + ' not found.')
         return
 
+    def removeStepChannel(self, channel):
+        """[summary]
+        
+        Args:
+            channel ([type]): [description]
+        """
+        for i, c in enumerate(self.scenario['step_channels']):
+            if c['channel_name']==channel:
+                del self.scenario['step_channels'][i]
+
     def getStepChannels(self):
         """
         Returns all the step channels (right side of the measurement program).
@@ -509,8 +519,15 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         target_channel['signal_source'] = source
 
-        # print(target_channel)
-        # print(source_channel)
+    '''
+    def removeSignalConnection(self, target):
+        """Deletes a signal connection.
+        
+        Args:
+            target (str): Target channel for which the signal connection is to be removed.
+        """
+        del(self.getChannel(target)['signal_source'])
+    '''
 
     def setSignalConnectionsByDict(self, connection_dict):
         """
