@@ -298,6 +298,25 @@ class ScriptObject(ScriptTools.MeasurementObject):
                 else:
                     step_channels.pop(ii+1)
 
+    def move_log_channel_to(self, channel_name, index):
+        """
+        Moves a log channel to the given index in the list of log channels.
+
+        Arguments:
+            channel_name(str) - - Name of the log channel
+            index(int) - - new position of the channel in the list of channels.
+        """
+
+        log_channels = self.scenario['log_channels']
+
+        for i, log_channel in enumerate(log_channels):
+            if channel_name==log_channel:
+                log_channels.insert(index, log_channel)
+                if i<index:
+                    log_channels.pop(i)
+                else:
+                    log_channels.pop(i+1)
+
     def updateValue(self, channel_name, value, itemType='SINGLE', step_index=0):
         """
         Update a value in the config file.
@@ -898,6 +917,49 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
         print('Warning! getOutputPathOfPreviousMeasurement() is not implmented correctly at the moment.')
         return self.file_out + '.hdf5'
+
+
+    def useLabberOptimizer(self, opt_channels, general_settings):
+        """Activate Labber optimization.
+        
+        Args:
+            opt_channels (dict): Keys are optimization channels, values are optimizer config:
+            Example: opt_channels=
+                {'param1': {'Enabled': True,
+                            'Initial step size': 0.05,
+                            'Max value': 1.0,
+                            'Min value': 0.0,
+                            'Precision': 0.001,
+                            'Start value': 0.5},
+                {'param2': {'Enabled': True,
+                            'Initial step size': 10e6,
+                            'Max value': 5e9,
+                            'Min value': 4e9,
+                            'Precision': 1e6,
+                            'Start value': 4.5e9}}
+            general_settings (dict): General optimizer settings, should contain 
+            {'Max evaluations': 200,
+                'Method': 'Nelder-Mead',
+                'Minimization function': '1-y[0]',
+                'Target value': 0.0,
+                'Relative tolerance': 0.02}
+        """
+
+        step_channels=self.getStepChannels()
+
+        #go through optimization channels
+        for channel, opt_settings in opt_channels.items():
+            #cleanup old stuff
+            self.removeStepChannel(channel)
+            self.updateStepChannelsByDict({channel: 0})
+
+            #go through list of step channels and write settings to Labber optimizer config
+            for i, step_ch in enumerate(step_channels):
+                if step_ch['channel_name']==channel:
+                    step_channels[i]['optimizer_config'].update(opt_settings)
+
+        #general optimizer settings
+        self.scenario['settings'].update(general_settings)
 
 
 def updateAndPerformMeasurement_old(template_path, output_directory_root, output_file_name, tags, comment, globals_path, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None):
