@@ -31,13 +31,13 @@ class ScriptObject(ScriptTools.MeasurementObject):
     def performMeasurement(self, return_data=True):
         temp_file_name = os.path.splitext(self.file_out)[0]+'_tmp.labber'
         file_dir_path = os.path.dirname(self.file_out)
+
         # Create subdirectories if they don't exist.
-        # print(file_dir_path)
-        if not file_dir_path.strip():
+        if file_dir_path.strip():
             os.makedirs(file_dir_path, exist_ok=True)
         # print(os.path.splitext(self.file_out)[0])
         ScriptTools.save_scenario_as_binary(self.scenario, temp_file_name)
-        # print('Temp file name:' + temp_file_name)
+        print('Temp file name:' + temp_file_name)
         labber_meas_object = ScriptTools.MeasurementObject(
             temp_file_name, self.file_out)
         if self.master_channel is not None:
@@ -169,6 +169,19 @@ class ScriptObject(ScriptTools.MeasurementObject):
             elif 'name' in channel.keys() and channel['name'] == name:
                 return channel
         return None
+
+    def getStepChannel(self, name):
+        """ Get a reference to a step channel by its name.
+
+        Args:
+            name (str): Name of the step channel.
+
+        Returns:
+            Reference to the step channel or None if not found.
+        """
+        for ii, step_channel_name in enumerate(self.getStepChannelNames()):
+            if step_channel_name == name:
+                return self.getStepChannels()[ii]
 
     def getChannelNames(self):
         """
@@ -445,7 +458,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
                 set_sweep_parameter(channel, {
                     'use_relations': False}, 'PARAM', index)
 
-        step_channels = self.scenario['step_channels']
+        step_channels = self.getStepChannels()
         for current_channel in step_channels:
             # print(current_channel['channel_name'],channel_name)
             if(channel_name == current_channel['channel_name']):
@@ -499,23 +512,24 @@ class ScriptObject(ScriptTools.MeasurementObject):
         # The following approach fails, if the is ' - ' in the instrument name or there is no instrument name at all.
         # This can be the case if nick name is used for the channel. However, in that case it should always exist as a step channel.
 
-        split_name = channel_name.split(' - ', 1)
+        labber_channel = self.getChannel(channel_name)
+        if labber_channel is None:
+            # Channel is not found. Need to create one.
+            split_name = channel_name.split(' - ', 1)
 
-        if len(split_name) > 1:
-            instrument_name = split_name[0]
-            parameter_name = split_name[1]
-        else:
-            raise ValueError('Parameter ' + channel_name +
-                             ' your tried to update does not exist.')
-        # self.updateInstrumentValue(instrument_name,parameter_name,value)
-        self.addChannel(instrument_name, parameter_name)
+            if len(split_name) > 1:
+                instrument_name = split_name[0]
+                parameter_name = split_name[1]
+                self.addChannel(instrument_name, parameter_name)
+            else:
+                # Channel Name is a nick name, since no dash was found.
+                raise ValueError('Parameter ' + channel_name +
+                                 ' your tried to update does not exist and cannot be created. Try creating it first using addChannel().')
+
         set_sweep_parameter(new_channel, value, itemType, step_index)
 
-        logging.info('Step channel ' + channel_name + ' not found.')
+        logging.info('Step channel ' + channel_name + ' not found. It has been created.')
         return
-        # print(self.scenario)
-        # def updateValue():
-        #	pass
 
     def setSignalConnection(self, target, source):
         """
@@ -618,19 +632,23 @@ class ScriptObject(ScriptTools.MeasurementObject):
         Adds a new channel to the measurement object.
 
         Arguments:
-            instrument_name(str) - - name of the instrument the channel belongs to.
-            quantity(str) - - the name of the channel in the instrument driver
-            name(str), default(None) - - the name which the channel is called
-            full_name(str), default(None) - - The full name of the channel. If not None, this overrides insturment_name and quantity.
+            instrument_name(str): name of the instrument the channel belongs to.
+            quantity(str): the name of the channel in the instrument driver
+            name(str), default(None): the name which the channel is called
+            full_name(str), default(None): The full name of the channel. If not None, this overrides insturment_name and quantity.
         """
 
         if full_name is not None:
             split_name = full_name.split(' - ', 1)
             instrument_name = split_name[0]
             quantity = split_name[1]
+
         for channel in self.scenario['channels']:
             if(channel['instrument'] == instrument_name and channel['quantity'] == quantity):
-                return  # Channel already exitst
+                # Channel already exitst
+                if name is not None:
+                    self.nameChannel(instrument_name + ' - ' + quantity, name)
+                return
 
         channel = {
             'instrument': instrument_name,
@@ -639,6 +657,25 @@ class ScriptObject(ScriptTools.MeasurementObject):
         if name is not None:
             channel['name'] = name
         self.scenario['channels'].append(channel)
+
+    def nameChannel(self, old_name, new_name):
+        """ Gives a nick name to the channel.
+
+        In addition to naming the channel, renames all the step channels and log channels to which
+        old_name of the channel refers to.
+        Args:
+            old_name (str): Full name of the channel in format 'instrument - quantity' or the nick name of the channel.
+            nick_name (str): The name with which the channel should be called. If None, nick Name is removed.
+        """
+        channel = self.getChannel(old_name)
+        if channel is not None:
+            channel['name'] = new_name
+            step_channel = self.getStepChannel(old_name)
+            if step_channel is not None:
+                step_channel['channel_name'] = new_name
+            for ii, log_channel in enumerate(self.getLogChannels()):
+                if log_channel == old_name:
+                    self.getLogChannels()[ii] = new_name
 
     def setParameter(self, name, value):
         """
