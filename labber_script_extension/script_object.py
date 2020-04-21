@@ -829,7 +829,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
                         self.updateValue(name, list_value,
                                          itemType='SINGLE', step_index=ii)
 
-    def updateValuesByArrays(self, globals_path, tags=None, comment=None, user=None, project=None, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None, override_log_channels=False):
+    def updateValuesByArrays(self, globals_path, tags=None, comment=None, user=None, project=None, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None, override_log_channels=False,local_settings={}):
         """
         Updates the measurement object using parameter dictionaries.
         """
@@ -841,7 +841,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         self.updateStepChannelsByDict(gl.step_channels)
         self.updateStepChannelsByDict(local_step_channels)
-
+        self.updateSettings(local_settings)
         self.updateStepChannelsByDict(looped_variables)
 #        for instrument_name,parameter_dict in gl.instrument_values.items():
 #            for parameter_name,value in parameter_dict.items():
@@ -1069,7 +1069,7 @@ def updateAndPerformMeasurement_old(template_path, output_directory_root, output
     Lfile.setProject(gl.project)
 
 
-def updateAndPerformMeasurement(template_path, output_directory_root, output_file_name, tags, comment, globals_path, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None):
+def updateAndPerformMeasurement(template_path, output_directory_root, output_file_name, tags, comment, globals_path, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None,local_settings={}):
     print('Entering')
     now = datetime.datetime.now()
     output_directory = output_directory_root + \
@@ -1101,7 +1101,7 @@ def updateAndPerformMeasurement(template_path, output_directory_root, output_fil
     tags.extend(gl.tags)
     measurement_object = ScriptObject(template_path, output_path)
     measurement_object.updateValuesByArrays(globals_path, tags=tags, comment=comment, user=gl.user, project=gl.project, globals_file_name=globals_file_name, local_step_channels=local_step_channels,
-                                            looped_variables=looped_variables, local_parameters=local_parameters, local_instrument_values=local_instrument_values, log_channels=log_channels, override_log_channels=False)
+                                            looped_variables=looped_variables, local_parameters=local_parameters, local_instrument_values=local_instrument_values, log_channels=log_channels, override_log_channels=False,local_settings=local_settings)
     return measurement_object.performMeasurement()
 
 
