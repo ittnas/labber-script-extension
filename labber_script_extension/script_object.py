@@ -26,7 +26,6 @@ class ScriptObject(ScriptTools.MeasurementObject):
         self.file_out = sCfgFileOut
         self.scenario = ScriptTools.load_scenario_as_dict(self.file_in)
         self.master_channel = None
-        # super().__init__(sCfgFileIn, sCfgFileOut)
 
     def performMeasurement(self, return_data=True):
         temp_file_name = os.path.splitext(self.file_out)[0]+'_tmp.labber'
@@ -35,9 +34,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
         # Create subdirectories if they don't exist.
         if file_dir_path.strip():
             os.makedirs(file_dir_path, exist_ok=True)
-        # print(os.path.splitext(self.file_out)[0])
+
         ScriptTools.save_scenario_as_binary(self.scenario, temp_file_name)
-        print('Temp file name:' + temp_file_name)
         labber_meas_object = ScriptTools.MeasurementObject(
             temp_file_name, self.file_out)
         if self.master_channel is not None:
@@ -50,8 +48,10 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
             When other parameters are updated, creates a lookup table for them with respect to the master channel.
 
-            Does not work correctly at the moment. Would require updateValue to be used.
+            Does not work correctly at the moment.
         """
+
+        logging.warning('setMasterChannel() is not supported')
         # raise Exception('setMasterChannel not implementd.')
         self.master_channel = channel_name
         # temp_file_name = os.path.splitext(self.file_out)[0]+'_tmp.labber'
@@ -668,14 +668,32 @@ class ScriptObject(ScriptTools.MeasurementObject):
             nick_name (str): The name with which the channel should be called. If None, nick Name is removed.
         """
         channel = self.getChannel(old_name)
+
         if channel is not None:
-            channel['name'] = new_name
+            full_channel_name = channel['instrument'] + ' - ' + channel['quantity']
+            if 'name' in channel:
+                nick_name = channel['name']
+            else:
+                nick_name = None
+            if new_name is not None:
+                channel['name'] = new_name
+            else:
+                if 'name' in channel:
+                    del(channel['name'])
             step_channel = self.getStepChannel(old_name)
+            if step_channel is None:
+                step_channel = self.getStepChannel(nick_name)
             if step_channel is not None:
-                step_channel['channel_name'] = new_name
+                if new_name is not None:
+                    step_channel['channel_name'] = new_name
+                else:
+                    step_channel['channel_name'] = full_channel_name
             for ii, log_channel in enumerate(self.getLogChannels()):
-                if log_channel == old_name:
-                    self.getLogChannels()[ii] = new_name
+                if log_channel == old_name or log_channel == nick_name:
+                    if new_name is not None:
+                        self.getLogChannels()[ii] = new_name
+                    else:
+                        self.getLogChannels()[ii] = channel['instrument'] + ' - ' + channel['quantity']
 
     def setParameter(self, name, value):
         """
