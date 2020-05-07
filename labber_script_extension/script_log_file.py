@@ -84,7 +84,10 @@ class ScriptLogFile(Labber.LogFile):
         dimensions = []
         for channel in step_channels:
             if isinstance(channel['values'], np.ndarray) and len(channel['values']) > 1:
-                channel_names.append(channel['name'])
+                if 'unit' in channel and channel['unit'] != '':
+                    channel_names.append(channel['name'] + ' (' + channel['unit'] + ')')
+                else:
+                    channel_names.append(channel['name'])
                 channel_values.append(channel['values'])
                 dimensions.append(len(channel['values']))
 
@@ -98,6 +101,12 @@ class ScriptLogFile(Labber.LogFile):
         dimensions = dimensions[::-1]
         dimensions.append(first_element)
         dimensions = np.array(dimensions[::-1])
+
+        if 'unit' in log_channel_dict and log_channel_dict['unit'] != '':
+            channel_names.append(log_channel + ' (' + log_channel_dict['unit'] + ')')
+        else:
+            channel_names.append(log_channel)
+
         return (channel_values, channel_names, dimensions)
 
     def getDataMatrix(self, log_channel=None):
@@ -108,7 +117,7 @@ class ScriptLogFile(Labber.LogFile):
             log_channel (str): name of the log channel which data is returned.
         Returns:
             A tuple with three elements. The first is an ndarray with the data, second contains a list of arrays with the step channel data, and the third element
-            contains a list of step channel names.
+            contains a list of step channel names and the log channel name as the last element.
         """
         step_channels = self.getStepChannels()
         log_channels = self.getLogChannels()
@@ -125,7 +134,10 @@ class ScriptLogFile(Labber.LogFile):
         dimensions = []
         for channel in step_channels:
             if isinstance(channel['values'], np.ndarray) and len(channel['values']) > 1:
-                channel_names.append(channel['name'])
+                if 'unit' in channel and channel['unit'] != '':
+                    channel_names.append(channel['name'] + ' (' + channel['unit'] + ')')
+                else:
+                    channel_names.append(channel['name'])
                 channel_values.append(channel['values'])
                 dimensions.append(len(channel['values']))
 
@@ -141,5 +153,9 @@ class ScriptLogFile(Labber.LogFile):
 
         data = np.reshape(data, dimensions)
         data = np.transpose(data)
+        if 'unit' in log_channel_dict and log_channel_dict['unit'] != '':
+            channel_names.append(log_channel + ' (' + log_channel_dict['unit'] + ')')
+        else:
+            channel_names.append(log_channel)
 
         return (data, channel_values, channel_names)
