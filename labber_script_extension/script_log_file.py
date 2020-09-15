@@ -109,12 +109,13 @@ class ScriptLogFile(Labber.LogFile):
 
         return (channel_values, channel_names, dimensions)
 
-    def getDataMatrix(self, log_channel=None):
+    def getDataMatrix(self, log_channel=None, log=-1):
         """
         Returns the data as a numpy array.
 
         Args:
             log_channel (str): name of the log channel which data is returned.
+            log (int): Index of log which data to retrieve. Defaults to the last log (-1)
         Returns:
             A tuple with three elements. The first is an ndarray with the data, second contains a list of arrays with the step channel data, and the third element
             contains a list of step channel names and the log channel name as the last element.
@@ -141,7 +142,7 @@ class ScriptLogFile(Labber.LogFile):
                 channel_values.append(channel['values'])
                 dimensions.append(len(channel['values']))
 
-        data = self.getData(log_channel)
+        data = self.getData(log_channel, log=log)
         if log_channel_dict['vector']:
             dimensions.insert(0, data.shape[-1])
             channel_names.insert(0, 'vector_data')
@@ -151,6 +152,10 @@ class ScriptLogFile(Labber.LogFile):
         dimensions = dimensions[::-1]
         dimensions.append(first_element)
 
+        # if data.size != np.prod(dimensions):
+        #     missing_factor = np.prod(dimensions) / data.size
+        #     data = data[:int(dimensions[0]*missing_factor), :]
+        #     dimensions
         data = np.reshape(data, dimensions)
         data = np.transpose(data)
         if 'unit' in log_channel_dict and log_channel_dict['unit'] != '':
