@@ -4,7 +4,7 @@ DISTUTILS_DEBUG = 1
 
 config = dict(
     name='labber-script-extension',
-    version='1.0',
+    version='1.1',
     description='Extension for labber scripting tools',
     license="MIT",
     author='Antti Vepsalainen',
