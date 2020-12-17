@@ -148,6 +148,8 @@ class ScriptLogFile(Labber.LogFile):
             channel_names.insert(0, 'vector_data')
             channel_values.insert(0, np.linspace(0, 1, data.shape[-1]))
 
+        if len(dimensions) == 0:
+            return (np.squeeze(data), channel_values, channel_names)
         first_element = dimensions.pop(0)
         dimensions = dimensions[::-1]
         dimensions.append(first_element)
