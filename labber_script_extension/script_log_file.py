@@ -217,8 +217,15 @@ class ScriptLogFile(Labber.LogFile):
 
         if take_index is not None and channel_order is not None:
             if len(channel_values) > len(channel_order):
+                #print(np.append(data.shape[:len(channel_order) - 1], -1).astype(int))
+                data = np.reshape(data, np.append(data.shape[:len(channel_order)], -1).astype(int))
                 data = np.transpose(data)
-                data = data[take_index]
+                if take_index == 'avg':
+                    data = np.mean(data, axis=0)
+                elif take_index == 'median':
+                    data = np.median(data, axis=0)
+                else:
+                    data = data[take_index]
                 data = np.transpose(data)
                 channel_values = channel_values[:len(channel_order)]
                 channel_names = channel_names[:len(channel_order)]
