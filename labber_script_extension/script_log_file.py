@@ -121,7 +121,7 @@ class ScriptLogFile(Labber.LogFile):
             log (int): Index of log which data to retrieve. Defaults to the last log (-1)
             channel_order (list): list of step_channels in order. The data is reordered so that the first dimension corresponds to the first step channel in the list.
                                   If step channel corresponds to a singleton dimension, a new dimension is created in its place. As a result.
-            take_index (int or tuple of ints): Only used if step_channels is not None. If there are more non-singleton step channels than specified by step_channels, the other dimensions are picked by take_index. As a result, the number of returned dimensions is equal to number of specified step_channels.
+            take_index (int or list of ints or str): Only used if channel_order is not None. If there are more step channels than specified by channel_order, take_index controls what to do with them. If a single int is provided, the submatrix corresponding to that index is returned. As a result, the number of returned dimensions is equal to number of specified step_channels. If a list of ints is provided, list of matrices corresponding to the list of indices is returned. Alternatively, strings 'avg', 'median' or 'std' can be given to return average or median over non-used dimensions.
         Returns:
             A tuple with three elements. The first is an ndarray with the data, second contains a list of arrays with the step channel data, and the third element
             contains a list of step channel names and the log channel name as the last element.
@@ -220,10 +220,12 @@ class ScriptLogFile(Labber.LogFile):
                 #print(np.append(data.shape[:len(channel_order) - 1], -1).astype(int))
                 data = np.reshape(data, np.append(data.shape[:len(channel_order)], -1).astype(int))
                 data = np.transpose(data)
-                if take_index == 'avg':
+                if take_index == 'avg' or take_index == 'average' or take_index == 'mean':
                     data = np.mean(data, axis=0)
                 elif take_index == 'median':
                     data = np.median(data, axis=0)
+                elif take_index == 'std':
+                    data = np.std(data, axis=0)
                 else:
                     data = data[take_index]
                 data = np.transpose(data)
