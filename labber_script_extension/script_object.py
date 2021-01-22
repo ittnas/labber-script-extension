@@ -340,6 +340,16 @@ class ScriptObject(ScriptTools.MeasurementObject):
                 else:
                     log_channels.pop(i+1)
 
+    def add_equation(self, channel_name, equation, variables):
+        """ A helper function to add channel relation.
+
+        Args:
+            channel_name (str): Name of the channel for which the equation is added.
+            equation (str): The equation string. Ex: 'p1 + 2'
+            variables (dict of strs): A dictionary specifying the variables in the equation. Ex: {'p1': 'Instrument Name - Channel Name', 'p2': 'Instrument Name 2 - Another Channel'}
+        """
+        self.updateStepChannelsByDict({channel_name: {'EQ': equation, 'VARS': variables}})
+
     def updateValue(self, channel_name, value, itemType='SINGLE', step_index=0):
         """
         Update a value in the config file.
