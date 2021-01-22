@@ -623,7 +623,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
         for target, source in connection_dict.items():
             self.setSignalConnection(target, source)
 
-    def addStepChannel(self, step_channel_name):
+    def addStepChannel(self, step_channel_name, value=None):
         """
         Adds a new step channel with default parameters.
 
@@ -631,8 +631,12 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         Parameters:
             step_channel_name(str) - - The name of the step channel.
+            value (double), default(None): the initial value of the step channel. If None, the value of the original channel is used (if it exists).
         """
-
+        if value is None:
+            value = self.getChannelValue(step_channel_name)
+        if value is None:
+            value = 0.0
         new_channel = {'channel_name': step_channel_name,
                        'wait_after': 0.0,
                        'final_value': 0.0,
@@ -648,7 +652,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
                        'step_items': [{
                            'range_type': 'Single',
                            'step_type': 'Fixed # of pts',
-                           'single': 0,
+                           'single': value,
                            'start': 0,
                            'stop': 1,
                            'center': 0.5,
