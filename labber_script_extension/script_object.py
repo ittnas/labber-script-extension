@@ -635,7 +635,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
         step_channels = self.getStepChannels()
         step_channels.append(new_channel)
 
-    def addChannel(self, instrument_name, quantity, name=None, full_name=None, physical_unit=None, instrument_unit=None):
+    def addChannel(self, instrument_name, quantity, name=None, full_name=None, physical_unit=None, instrument_unit=None, value=None):
         """
         Adds a new channel to the measurement object.
 
@@ -646,12 +646,17 @@ class ScriptObject(ScriptTools.MeasurementObject):
             full_name(str), default(None): The full name of the channel. If not None, this overrides insturment_name and quantity.
             physical_unit (str), default(None): The physical unit of the channel (Hz etc). If None, no unit is added.
             instrument_unit (str), default(None): The insturment unit of the channel (Hz etc). If None, no unit is added.
+            value (double), default(None): Updates the value of the channel. If None, the default value of the instrument is used, or if channel already exists,
+                                           its value is left unchanged..
         """
 
         if full_name is not None:
             split_name = full_name.split(' - ', 1)
             instrument_name = split_name[0]
             quantity = split_name[1]
+
+        if value is not None:
+            self.updateInstrumentValue(instrument_name, quantity, value)
 
         for channel in self.scenario['channels']:
             if(channel['instrument'] == instrument_name and channel['quantity'] == quantity):
