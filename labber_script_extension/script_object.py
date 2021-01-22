@@ -43,6 +43,11 @@ class ScriptObject(ScriptTools.MeasurementObject):
         return labber_meas_object.performMeasurement(return_data)
 
     def save_as_binary(self, filename):
+        """ Saves the scipt object as labber binary (.labber file).
+
+        Args:
+            filename (str): name of the saved binary.
+        """
         ScriptTools.save_scenario_as_binary(self.scenario, filename)
 
     def setMasterChannel(self, channel_name):
