@@ -658,6 +658,10 @@ class ScriptObject(ScriptTools.MeasurementObject):
                 # Channel already exitst
                 if name is not None:
                     self.nameChannel(instrument_name + ' - ' + quantity, name)
+                if physical_unit is not None:
+                    channel['unit_physical'] = physical_unit
+                if instrument_unit is not None:
+                    channel['unit_instrument'] = instrument_unit
                 return
 
         channel = {
