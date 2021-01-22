@@ -42,6 +42,9 @@ class ScriptObject(ScriptTools.MeasurementObject):
             labber_meas_object.setMasterChannel(self.master_channel)
         return labber_meas_object.performMeasurement(return_data)
 
+    def save_as_binary(self, filename):
+        ScriptTools.save_scenario_as_binary(self.scenario, filename)
+
     def setMasterChannel(self, channel_name):
         """
             Sets the master channel.
