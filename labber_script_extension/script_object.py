@@ -350,6 +350,11 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
         self.updateStepChannelsByDict({channel_name: {'EQ': equation, 'VARS': variables}})
 
+        # Make sure that the step channels exist
+        for key, value in variables.items():
+            if self.getStepChannel(value) is None:
+                self.addStepChannel(value)
+
     def updateValue(self, channel_name, value, itemType='SINGLE', step_index=0):
         """
         Update a value in the config file.
