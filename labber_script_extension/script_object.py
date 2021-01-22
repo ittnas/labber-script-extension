@@ -253,6 +253,32 @@ class ScriptObject(ScriptTools.MeasurementObject):
         log_channels = self.scenario['log_channels']
         return log_channels
 
+    def getChannelValue(self, channel_name):
+        """ Returns the value of a channel.
+
+        Args:
+            channel_name (str): Name of the channel which value is returned
+
+        Returns:
+            value of the channel or None is channel is not found.
+
+        """
+        split_name = channel_name.split(' - ', 1)
+        if len(split_name) > 1:
+            instrument_name = split_name[0]
+            quantity_name = split_name[1]
+        else:
+            # Channel Name is a nick name, since no dash was found.
+            channel = self.getChannel(channel_name)
+            if channel is not None:
+                instrument_name = channel['instrument']
+                quantity_name = channel['quantity']
+            else:
+                return None
+        for current_instrument in self.scenario['instruments']:
+            if instrument_name == current_instrument['com_config']['name']:
+                return current_instrument['values'][quantity_name]
+
     def printStepChannels(self, filter_string=None, instrument_name=None, verbose=False):
         """
         Prints all the step channels which name matches the filter string.
