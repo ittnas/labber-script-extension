@@ -378,7 +378,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         # Make sure that the step channels exist
         for key, value in variables.items():
-            if self.getStepChannel(value) is None:
+            if self.getStepChannel(value) is None and value != 'Step values':
                 self.addStepChannel(value)
 
     def updateValue(self, channel_name, value, itemType='SINGLE', step_index=0):
@@ -414,7 +414,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
             step_index(int, optional) - - index in the step items which value will be updated.
         """
-
+        if value is None:
+            logging.warning('Trying to update channel ' + channel_name + ' with None value')
         def set_sweep_parameter(channel, value, itemType, index):
             # if(not np.isscalar(value)):
             #    channel['relation_parameters'][0]['use_lookup'] = True
