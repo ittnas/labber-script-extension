@@ -181,7 +181,8 @@ class ScriptLogFile(Labber.LogFile):
         new_channels = []
         #new_channels_with_units = []
         new_channel_values = []
-        channel_dict = self.getChannelValuesAsDict()
+        #channel_dict = self.getChannelValuesAsDict()
+        channel_dict = self.getEntry()
         if channel_order is not None:
             for channel in channel_order:
                 try:
@@ -190,7 +191,8 @@ class ScriptLogFile(Labber.LogFile):
                     # channel is not in the list
                     if channel in channel_dict:
                         new_channels.append(channel)
-                        new_channel_values.append([channel_dict[channel]])
+                        #new_channel_values.append([channel_dict[channel]])
+                        new_channel_values.append(channel_dict[channel])
                         current_order.append(len(channel_names_wo_units) + len(new_channels) - 1)
                         # XXX Deal with adding the units
                     else:
