@@ -190,8 +190,13 @@ class ScriptLogFile(Labber.LogFile):
                 except ValueError:
                     # channel is not in the list
                     if channel in channel_dict:
+                        new_channel_values_temp = channel_dict[channel]
+                        if len(new_channel_values_temp) > 1:
+                            # This is not a new dimension, but replacement for the first dimension (created through channel relations).
+                            channel_values[0] = new_channel_values_temp
+                            channel_names_wo_units[0] = channel
+                            continue
                         new_channels.append(channel)
-                        #new_channel_values.append([channel_dict[channel]])
                         new_channel_values.append(channel_dict[channel])
                         current_order.append(len(channel_names_wo_units) + len(new_channels) - 1)
                         # XXX Deal with adding the units
@@ -202,11 +207,15 @@ class ScriptLogFile(Labber.LogFile):
 
         new_order = list(np.arange(0, len(channel_names_wo_units) + len(new_channels)))
 
+        #print(new_order)
+
         def diff(first, second):
             second = set(second)
             return [item for item in first if item not in second]
 
         new_order = current_order + diff(new_order, current_order)
+        #print(current_order)
+        #print(new_order)
 
         if len(new_channels) > 0:
             data = np.expand_dims(data, axis=list(np.arange(-len(new_channels), 0)))
