@@ -79,7 +79,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
         raise Exception('Not implemented.')
 
-    def updateInstrumentValue(self, instrument_name, parameter_name, value):
+    def updateInstrumentValue(self, instrument_name, parameter_name, value, full_name=None):
         """
         Updates a value directly in the instrument (corresponds to changing values in the left-hand side in labber)
 
@@ -87,7 +87,14 @@ class ScriptObject(ScriptTools.MeasurementObject):
         instrument_name (str) -- name of the instrument
         parameter_name (str) -- name of the parameter
         value (float) -- value of the new parameter
+        full_name (str) -- Full labber name of the channel ('[instrument_name] - [parameter_name]'). If given, overrides instrument_name and parametr_name
         """
+
+        if full_name is not None:
+            split_name = full_name.split(' - ', 1)
+            instrument_name = split_name[0]
+            parameter_name = split_name[1]
+
         for current_instrument in self.scenario['instruments']:
             if instrument_name == current_instrument['com_config']['name']:
                 current_instrument['values'][parameter_name] = value
