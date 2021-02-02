@@ -379,14 +379,98 @@ class ScriptObject(ScriptTools.MeasurementObject):
         Args:
             channel_name (str): Name of the channel for which the equation is added.
             equation (str): The equation string. Ex: 'p1 + 2'
-            variables (dict of strs): A dictionary specifying the variables in the equation. Ex: {'p1': 'Instrument Name - Channel Name', 'p2': 'Instrument Name 2 - Another Channel'}
+            variables (dict of strs): A dictionary specifying the variables in the equation. Ex: {'p1': 'Instrument Name - Channel Name', 'p2': 'Instrument Name 2 - Another Channel'}. You can create lookup table in the following way:
+        {'p1': {channel_name: 'Instrument Name - Channel Name', lookup_x: [list of values], lookup_y: [list of values]}, 'p2': 'Instrument Name 2 - Another Channel'}
         """
         self.updateStepChannelsByDict({channel_name: {'EQ': equation, 'VARS': variables}})
 
         # Make sure that the step channels exist
         for key, value in variables.items():
-            if self.getStepChannel(value) is None and value != 'Step values':
+            if type(value) is dict:
+                # Lookup table, add required channels. NOT IMPLEMENTED.
+                pass
+            elif self.getStepChannel(value) is None and value != 'Step values':
                 self.addStepChannel(value)
+
+
+    def write_lookup(self, lookup_table, channel_name, ref_channel_name, add_current_value=True):
+        """ A wrapper to write a lookup table for a channel in equation. Not that this will override the existing equation. The full functionality can be achieved with add_equation() function.
+
+    Args:
+        lookup_table (list): Lookup table as list in Labber convention.
+        channel_name (Str): Channel name of channel that obtains lookup table.
+        ref_channel_name (Str): Reference channel name.
+        add_current_value (bool, optional): If True, current value of the channel is added to the lookup table.
+    """
+        
+        if add_current_value:
+            self.updateStepChannelsByDict({
+                channel_name: {
+                    'EQ': 'x+p1',
+                    'VARS': {'x': 'Step values', 'p1': {'channel_name': ref_channel_name, 'lookup_x': lookup_table[0], 'lookup_y': lookup_table[1]}}
+                }
+            })
+        else:
+            self.updateStepChannelsByDict({channel_name: {'EQ': 'p1', 'VARS': {'x': 'Step values',
+                'p1': {'channel_name': ref_channel_name, 'lookup_x': lookup_table[0], 'lookup_y': lookup_table[1]}}}})
+
+    def update_step_parameters(self, channel_name,
+                               sweep_rate=None,
+                               wait_after=None,
+                               after_last=None,
+                               final_value=None,
+                               sweep_mode=None,
+                               use_outside_sweep_rate=None,
+                               sweep_rate_outside=None,
+                               alternate_direction=None):
+        """ A wrapper that can be used to update channel step parameters.
+
+        Args:
+            channel_name (str): Name of the step channel. If it doesn't exist, the channel is created.
+            sweep_rate (double): Rate at which the value should be changed (unit/s)
+            wait_after (double): Number of seconds to wait after the value is set.
+            after_last (str): What to do after sweep is finished. Either 'Goto first point', 'Stay at final', or 'Goto value...' (yes, there are three dots in the string).
+            final_value (double): Final value for the instrument. If given, will set after_last to 'Goto value...'.
+            use_outside_sweep_rate (bool): Boolean indicating whether to use different sweep rate outside.
+            sweep_rate_outside (double): Sweep rate outside of loop. If value other than zero is given, use_outside_sweep_rate is set to True.
+            alternate_direction (bool): Boolean indicating whether to sweep in alternate_direction
+        """
+        param_dict = {}
+        if wait_after is not None:
+            param_dict['wait_after'] = wait_after
+
+        if final_value is not None:
+            param_dict['final_value'] = final_value
+            if final_value:
+                param_dict['after_last'] = 'Goto value...'
+        if after_last is not None:
+            if after_last in ['Goto first point', 'Stay at final', 'Goto value...']:
+                param_dict['after_last'] = after_last
+            else:
+                logging.warning('after_last must be on of "Goto first point", "Stay at final", "Goto value..."')
+        if sweep_mode is not None:
+            if sweep_mode in ['Between points', 'Off', 'Continuous']:
+                param_dict['sweep_mode'] = sweep_mode
+            else:
+                logging.warning('Sweep mode must be on of "Between points", "Off", or "Continuous"')
+
+        if sweep_rate_outside is not None:
+            if sweep_rate_outside:
+                param_dict['use_outside_sweep_rate'] = True
+            param_dict['sweep_rate_outside'] = sweep_rate_outside
+        if use_outside_sweep_rate is not None:
+            param_dict['use_outside_sweep_rate'] = use_outside_sweep_rate
+        if alternate_direction is not None:
+            param_dict['alternate_direction'] = alternate_direction
+
+        self.updateStepChannelsByDict({channel_name: {'PARAM': param_dict}})
+
+        if sweep_rate is not None:
+            channel = self.getStepChannel(channel_name)
+            if channel is not None and channel['sweep_mode'].lower() != 'Off':
+                for step_item in channel['step_items']:
+                    step_item['sweep_rate'] = sweep_rate
+
 
     def updateValue(self, channel_name, value, itemType='SINGLE', step_index=0):
         """
