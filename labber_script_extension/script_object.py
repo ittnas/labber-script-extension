@@ -652,7 +652,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
         # In order to designate the channel to the correct instrument, instrument name needs to be extacted.
         # The following approach fails, if the is ' - ' in the instrument name or there is no instrument name at all.
         # This can be the case if nick name is used for the channel. However, in that case it should always exist as a step channel.
-
+        if channel_name is None:
+            logging.warning('Trying to setup step channel, but the channel name is None.')
         labber_channel = self.getChannel(channel_name)
         if labber_channel is None:
             # Channel is not found. Need to create one.
