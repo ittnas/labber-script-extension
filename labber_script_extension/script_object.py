@@ -340,11 +340,13 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         Arguments:
             channel_name(str) - - Name of the step channel
-            index(int) - - new position of the channel in the list of channels.
+            index(int) - - new position of the channel in the list of channels. If negative, added to the end of stepchannels. Note that -1 adds to the end (different than most functions in python).
         """
 
         step_channels = self.scenario['step_channels']
 
+        if index < 0:
+            index = len(step_channels) + index + 1  # Note the additional +1. -1 moves to the end.
         for ii in range(len(step_channels)):
             channel = step_channels[ii]
             if channel_name == channel['channel_name']:
@@ -353,6 +355,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
                     step_channels.pop(ii)
                 else:
                     step_channels.pop(ii+1)
+                return
 
     def move_log_channel_to(self, channel_name, index):
         """
