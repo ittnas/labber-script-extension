@@ -1014,13 +1014,17 @@ class ScriptObject(ScriptTools.MeasurementObject):
                 self.updateInstrumentValue(
                     instrument_name, parameter_name, value)
 
-    def updateStepChannelsByDict(self, step_channels):
+    def updateStepChannelsByDict(self, step_channels, skip_nones=False):
         """
         Updates step channels that are stored in a dictionary.
 
         The dictionary should have the format:
             step_channels = {channel_name: channel_value}
         Channel value can either be a single value or a dictionary of itemType - value pairs or a list of single values/dictionaries of itemType - value pairs.
+
+        Args:
+            step_channels (dict): dictionary if step channels.
+            skip_nones (bool): If True, None entries are skipped.
         """
 #        for name, value in step_channels.items():
 #            #try:
@@ -1033,20 +1037,24 @@ class ScriptObject(ScriptTools.MeasurementObject):
         for name, value in step_channels.items():
             if isinstance(value, dict):  # Only a single dictionary
                 for dict_key, dict_value in value.items():
-                    self.updateValue(name, dict_value, itemType=dict_key)
+                    if not (skip_nones and dict_value is None):
+                        self.updateValue(name, dict_value, itemType=dict_key)
             elif not isinstance(value, Iterable):
-                self.updateValue(name, value, itemType='SINGLE')
+                if not (skip_nones and value is None):
+                    self.updateValue(name, value, itemType='SINGLE')
             else:  # list of step items
                 # loop over all the steps
                 for ii, list_value in enumerate(value):
                     # this step is a dictionary describing the step
                     if isinstance(list_value, dict):
                         for dict_key, dict_value in list_value.items():
-                            self.updateValue(name, dict_value,
-                                             itemType=dict_key, step_index=ii)
+                            if not (skip_nones and dict_value is None):
+                                self.updateValue(name, dict_value,
+                                                 itemType=dict_key, step_index=ii)
                     else:  # this step is just a single point
-                        self.updateValue(name, list_value,
-                                         itemType='SINGLE', step_index=ii)
+                        if not (skip_nones and list_value is None):
+                            self.updateValue(name, list_value,
+                                             itemType='SINGLE', step_index=ii)
 
     def updateValuesByArrays(self, globals_path, tags=None, comment=None, user=None, project=None, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None, override_log_channels=False,local_settings={}):
         """
