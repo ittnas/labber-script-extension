@@ -151,7 +151,7 @@ class ScriptLogFile(Labber.LogFile):
                 dimensions.append(len(channel['values']))
 
         data = self.getData(log_channel, log=log)
-        if log_channel_dict['vector']:
+        if log_channel_dict is not None and log_channel_dict['vector']:
             dimensions.insert(0, data.shape[-1])
             channel_names.insert(0, 'vector_data')
             channel_names_wo_units.insert(0, 'vector_data')
@@ -169,7 +169,7 @@ class ScriptLogFile(Labber.LogFile):
         #     dimensions
         data = np.reshape(data, dimensions)
         data = np.transpose(data)
-        if 'unit' in log_channel_dict and log_channel_dict['unit'] != '':
+        if log_channel_dict is not None and 'unit' in log_channel_dict and log_channel_dict['unit'] != '':
             channel_names.append(log_channel + ' (' + log_channel_dict['unit'] + ')')
         else:
             channel_names.append(log_channel)
