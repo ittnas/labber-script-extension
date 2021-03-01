@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import sys
 import os
+import copy
 sys.path.append(os.environ.get(
     'LABBERPATH', r'C:\Program Files\Labber\Script'))  # NOQA: E402
 import Labber as Labber
@@ -775,6 +776,13 @@ class ScriptObject(ScriptTools.MeasurementObject):
             return
         step_channels = self.getStepChannels()
         step_channels.append(new_channel)
+
+    def copy_step_channel(self, new_channel_name, old_channel_name):
+        old_step_channel = self.getStepChannel(old_channel_name)
+        if old_step_channel is not None:
+            new_step_channel = copy.deepcopy(old_step_channel)
+            new_channel_name['channel_name'] = new_channel_name
+            self.getStepChannels().append(new_step_channel)
 
     def addChannel(self, instrument_name, quantity, name=None, full_name=None, physical_unit=None, instrument_unit=None, value=None):
         """
