@@ -494,7 +494,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
                     step_item['sweep_rate'] = sweep_rate
 
 
-    def updateValue(self, channel_name, value, itemType='SINGLE', step_index=0):
+    def updateValue(self, channel_name, value, itemType='SINGLE', step_index=None):
         """
         Update a value in the config file.
 
@@ -525,7 +525,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
                                          In order to use channel relations, the option has to be turned on using PARAM use_relations: True.
 
-            step_index(int, optional) - - index in the step items which value will be updated.
+            step_index(int, optional) - - index in the step items which value will be updated. If None, all other steps will be cleared.
         """
         if value is None:
             logging.warning('Trying to update channel ' + channel_name + ' with None value')
@@ -568,6 +568,11 @@ class ScriptObject(ScriptTools.MeasurementObject):
                     'use_relations': True}, 'PARAM', index)
 
                 return
+
+            if index is None:
+                if (len(channel['step_items'])) > 0:
+                    del channel['step_items'][1:]
+                index = 0
 
             if(index >= len(channel['step_items'])):
                 for ii in range(index-len(channel['step_items'])+1):
