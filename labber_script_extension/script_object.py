@@ -104,6 +104,24 @@ class ScriptObject(ScriptTools.MeasurementObject):
         logging.warning('Instrument ' + instrument_name + ' not found.')
         return
 
+    def copy_instrument_values(self, source_instrument_name, target_instrument_name):
+        """ Copies the instrument values, except for communication related parameters. Instruments have to be of same type.
+        """
+        source = self.get_instrument(source_instrument_name)
+        target = self.get_instrument(target_instrument_name)
+        if source is not None and target is not None:
+            target['values'] = copy.deepcopy(source['values'])
+
+    def get_instrument(self, instrument_name):
+        """ Returns the instrument with given name.
+
+        """
+        for current_instrument in self.scenario['instruments']:
+            if instrument_name == current_instrument['com_config']['name']:
+                return current_instrument
+        return None
+
+
     def removeStepChannel(self, channel):
         """[summary]
         
