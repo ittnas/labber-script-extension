@@ -781,7 +781,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
         old_step_channel = self.getStepChannel(old_channel_name)
         if old_step_channel is not None:
             new_step_channel = copy.deepcopy(old_step_channel)
-            new_channel_name['channel_name'] = new_channel_name
+            new_step_channel['channel_name'] = new_channel_name
+            self.removeStepChannel(new_channel_name)
             self.getStepChannels().append(new_step_channel)
 
     def addChannel(self, instrument_name, quantity, name=None, full_name=None, physical_unit=None, instrument_unit=None, value=None):
