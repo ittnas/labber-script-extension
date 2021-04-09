@@ -1027,6 +1027,17 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         self.scenario['settings'].update(settings_dict)
 
+
+    def updateInstrumentValueFullName(self, full_name, value):
+        """
+        This is a wrapper to updateInstrumentValue, which allows you to add full_name.
+        
+        Args:
+           full_name (str): Full name of the instrument value to be set. Format: "[Instrument name] - [Channel name]"
+           value (float): The value of the parameter.
+        """
+        return self.updateInstrumentValue(None, None, value=value, full_name=full_name)
+
     def updateInstrumentValuesByDict(self, instrument_values):
         """
             Updates instrument values that are stored in a dictionary.
