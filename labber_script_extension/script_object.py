@@ -12,23 +12,26 @@ import Labber as Labber
 from Labber import ScriptTools
 
 
-class ScriptObject(ScriptTools.MeasurementObject):
+class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
     """
-    A Labber measurement object based on the JSON dictionary. Contains some additional features.
+    A Labber measurement object based on Labber.Scenario. Contains also features from ScriptTools.MeasurementObject.
     """
 
-    def __init__(self, sCfgFileIn, sCfgFileOut, createLog=False):
-
-        self.file_in = sCfgFileIn
-        # if sCfgFileOut = None:
-        #    output_directory =  +'..\\{:d}\\{:02d}\\Data_{:02d}{:02d}\\'.format(now.year,now.month,now.month,now.day)
-        #    output_path = os.path.join(output_directory,output_file_name)
-        # else:
+    def __init__(self, sCfgFileIn=None, sCfgFileOut=None):
+        Labber.Scenario.__init__(self, sCfgFileIn)
+        #self.file_in = sCfgFileIn
         self.file_out = sCfgFileOut
-        self.scenario = ScriptTools.load_scenario_as_dict(self.file_in)
-        self.master_channel = None
+        #self.scenario = ScriptTools.load_scenario_as_dict(self.file_in)
+        #self.scenario = Labber.Scenario(self.file_in)
+        self.primary_channel = None  # XXX
 
-    def performMeasurement(self, return_data=True):
+    def performMeasurement(self, return_data=True, **kwargs):
+        """ Performs the measurement.
+
+        Args:
+            return_data (bool): boolean indicating whether data should be returned by the labber measurement.
+            **kwargs (dict): Possible keywords: use_scheduler (bool). This is supported only by labber versions.
+        """
         temp_file_name = os.path.splitext(self.file_out)[0]+'_tmp.labber'
         file_dir_path = os.path.dirname(self.file_out)
 
@@ -36,12 +39,17 @@ class ScriptObject(ScriptTools.MeasurementObject):
         if file_dir_path.strip():
             os.makedirs(file_dir_path, exist_ok=True)
 
-        ScriptTools.save_scenario_as_binary(self.scenario, temp_file_name)
+        #ScriptTools.save_scenario_as_binary(self.scenario, temp_file_name)
+        self.save(temp_file_name)
         labber_meas_object = ScriptTools.MeasurementObject(
             temp_file_name, self.file_out)
-        if self.master_channel is not None:
-            labber_meas_object.setMasterChannel(self.master_channel)
-        return labber_meas_object.performMeasurement(return_data)
+        if self.primary_channel is not None:
+            if hasattr(labber_meas_object, 'setPrimaryChannel'):
+                labber_meas_object.setPrimaryChannel(self.primary_channel)
+            else:
+                labber_meas_object.setMasterChannel(self.primary_channel)
+        #return labber_meas_object.performMeasurement(return_data, use_scheduler)  # use_scheduler is not supported by the older versions of labber
+        return labber_meas_object.performMeasurement(return_data, **kwargs)
 
     def save_as_binary(self, filename):
         """ Saves the scipt object as labber binary (.labber file).
@@ -49,7 +57,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
         Args:
             filename (str): name of the saved binary.
         """
-        ScriptTools.save_scenario_as_binary(self.scenario, filename)
+        #ScriptTools.save_scenario_as_binary(self.scenario, filename)
+        self.scenario.save(filename)
 
     def setMasterChannel(self, channel_name):
         """
@@ -57,16 +66,28 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
             When other parameters are updated, creates a lookup table for them with respect to the master channel.
 
-            Does not work correctly at the moment.
+            Does not work correctly at the moment. This is depracated.
         """
 
-        logging.warning('setMasterChannel() is not supported')
+        logging.warning('setMasterChannel() is depracated. Calling setPrimaryChannel instead.')
+        self.setPrimaryChannel(channel_name)
         # raise Exception('setMasterChannel not implementd.')
-        self.master_channel = channel_name
+        #self.master_channel = channel_name
         # temp_file_name = os.path.splitext(self.file_out)[0]+'_tmp.labber'
         # ScriptTools.save_scenario_as_binary(self.scenario, temp_file_name)
         # labber_meas_object = ScriptTools.MeasurementObject(temp_file_name,self.file_out)
         # labber_meas_object.setMasterChannel(channel_name)
+
+    def setPrimaryChannel(self, channel_name):
+        """
+            Sets the master channel.
+
+            When other parameters are updated, creates a lookup table for them with respect to the master channel.
+
+        Args:
+            channel_name (str): Name of the primary channel
+        """
+        self.primary_channel = channel_name
 
     def setOutputFile(self, filename):
         """
@@ -96,9 +117,9 @@ class ScriptObject(ScriptTools.MeasurementObject):
             instrument_name = split_name[0]
             parameter_name = split_name[1]
 
-        for current_instrument in self.scenario['instruments']:
-            if instrument_name == current_instrument['com_config']['name']:
-                current_instrument['values'][parameter_name] = value
+        for current_instrument in self.instruments:
+            if instrument_name == current_instrument.com_config.name:
+                current_instrument.values[parameter_name] = value
                 return
 
         logging.warning('Instrument ' + instrument_name + ' not found.')
@@ -110,33 +131,32 @@ class ScriptObject(ScriptTools.MeasurementObject):
         source = self.get_instrument(source_instrument_name)
         target = self.get_instrument(target_instrument_name)
         if source is not None and target is not None:
-            target['values'] = copy.deepcopy(source['values'])
+            target.values = copy.deepcopy(source.values)
 
-    def get_instrument(self, instrument_name):
-        """ Returns the instrument with given name.
+    # Replaced by Scenario's function
+    # def get_instrument(self, instrument_name):
+    #     """ Returns the instrument with given name.
 
-        """
-        for current_instrument in self.scenario['instruments']:
-            if instrument_name == current_instrument['com_config']['name']:
-                return current_instrument
-        return None
-
+    #     """
+    #     for current_instrument in self.scenario['instruments']:
+    #         if instrument_name == current_instrument['com_config']['name']:
+    #             return current_instrument
+    #     return None
 
     def removeStepChannel(self, channel):
-        """[summary]
-        
+        """ Removes the step channel if it exists.
+
         Args:
-            channel ([type]): [description]
+            channel (str): channel to be removed
         """
-        for i, c in enumerate(self.scenario['step_channels']):
-            if c['channel_name']==channel:
-                del self.scenario['step_channels'][i]
+        if channel in self.step_names():
+            self.remove_step(channel)
 
     def getStepChannels(self):
         """
         Returns all the step channels (right side of the measurement program).
         """
-        return self.scenario['step_channels']
+        return self.step_items
 
     def getStepChannelNames(self, filter_string=None, instrument_name=None):
         """
@@ -153,7 +173,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
         step_channel_names = []
 
         for channel in step_channels:
-            channel_name = channel['channel_name']
+            channel_name = channel.channel_name
 
             filter_passed = False
             instrument_name_passed = False
@@ -183,7 +203,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
         Returns all the channels (left side of the measurement program).
 
         """
-        return self.scenario['channels']
+        return self.channels
 
     def getChannel(self, name):
         """
@@ -197,12 +217,16 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
 
         # if name in self.getChannelNames():
-        for channel in self.getChannels():
-            if channel['instrument'] + ' - ' + channel['quantity'] == name:
-                return channel
-            elif 'name' in channel.keys() and channel['name'] == name:
-                return channel
-        return None
+        # for channel in self.getChannels():
+        #     if channel['instrument'] + ' - ' + channel['quantity'] == name:
+        #         return channel
+        #     elif 'name' in channel.keys() and channel['name'] == name:
+        #         return channel
+        # return None
+        if name in self.channel_names():
+            return self.get_channel(name)
+        else:
+            return None
 
     def getStepChannel(self, name):
         """ Get a reference to a step channel by its name.
@@ -221,14 +245,15 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
         Returns a list of all channel names.
         """
-        channel_names = []
-        for channel in self.getChannels():
-            if 'name' in channel.keys():
-                channel_names.append(channel['name'])
-            else:
-                channel_names.append(
-                    channel['instrument'] + ' - ' + channel['quantity'])
-        return channel_names
+        # channel_names = []
+        # for channel in self.getChannels():
+        #     if 'name' in channel.keys():
+        #         channel_names.append(channel['name'])
+        #     else:
+        #         channel_names.append(
+        #             channel['instrument'] + ' - ' + channel['quantity'])
+        # return channel_names
+        return self.channel_names()
 
     def getInstrumentValueNames(self, filter_string=None, instrument_name=None, is_case_sensitive=False):
         """
@@ -248,12 +273,12 @@ class ScriptObject(ScriptTools.MeasurementObject):
         if not is_case_sensitive and instrument_name is not None:
             instrument_name = instrument_name.lower()
 
-        instruments = self.scenario['instruments']
+        instruments = self.instruments
         # for current_instrument in self.scenario['instruments']:
         instrument_value_names = []
         for instrument in instruments:
-            current_instrument_name = instrument['com_config']['name']
-            for value_name in instrument['values'].keys():
+            current_instrument_name = instrument.com_config.name
+            for value_name in instrument.values.keys():
                 filter_passed = False
                 instrument_name_passed = False
 
@@ -276,7 +301,8 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
         Returns a list of all log channels in the scenario.
         """
-        log_channels = self.scenario['log_channels']
+        #log_channels = self.scenario['log_channels']
+        log_channels = self.log_channels
         return log_channels
 
     def getChannelValue(self, channel_name):
@@ -297,13 +323,13 @@ class ScriptObject(ScriptTools.MeasurementObject):
             # Channel Name is a nick name, since no dash was found.
             channel = self.getChannel(channel_name)
             if channel is not None:
-                instrument_name = channel['instrument']
-                quantity_name = channel['quantity']
+                instrument_name = channel.instrument
+                quantity_name = channel.quantity
             else:
                 return None
-        for current_instrument in self.scenario['instruments']:
-            if instrument_name == current_instrument['com_config']['name']:
-                return current_instrument['values'][quantity_name]
+        for current_instrument in self.instruments:
+            if instrument_name == current_instrument.com_config.name:
+                return current_instrument.values[quantity_name]
 
     def printStepChannels(self, filter_string=None, instrument_name=None, verbose=False):
         """
@@ -320,7 +346,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
         step_channel_data = []
 
         for channel in step_channels:
-            channel_name = channel['channel_name']
+            channel_name = channel.channel_name
 
             filter_passed = False
             instrument_name_passed = False
@@ -362,19 +388,21 @@ class ScriptObject(ScriptTools.MeasurementObject):
             index(int) - - new position of the channel in the list of channels. If negative, added to the end of stepchannels. Note that -1 adds to the end (different than most functions in python).
         """
 
-        step_channels = self.scenario['step_channels']
+        step_channels = self.getStepChannels()
 
-        if index < 0:
-            index = len(step_channels) + index + 1  # Note the additional +1. -1 moves to the end.
-        for ii in range(len(step_channels)):
-            channel = step_channels[ii]
-            if channel_name == channel['channel_name']:
-                step_channels.insert(index, channel)
-                if(ii < index):
-                    step_channels.pop(ii)
-                else:
-                    step_channels.pop(ii+1)
-                return
+        if channel_name in self.getStepChannelNames():
+            if index < 0:
+                index = len(step_channels) + index  # Note the additional +1. -1 moves to the end.
+            self.set_step_position(channel_name, index)
+        # for ii in range(len(step_channels)):
+        #     channel = step_channels[ii]
+        #     if channel_name == channel.channel_name:
+        #         step_channels.insert(index, channel)
+        #         if(ii < index):
+        #             step_channels.pop(ii)
+        #         else:
+        #             step_channels.pop(ii+1)
+        #         return
 
     def move_log_channel_to(self, channel_name, index):
         """
@@ -385,15 +413,12 @@ class ScriptObject(ScriptTools.MeasurementObject):
             index(int) - - new position of the channel in the list of channels.
         """
 
-        log_channels = self.scenario['log_channels']
+        log_channels = self.getLogChannels()
 
-        for i, log_channel in enumerate(log_channels):
-            if channel_name==log_channel:
-                log_channels.insert(index, log_channel)
-                if i<index:
-                    log_channels.pop(i)
-                else:
-                    log_channels.pop(i+1)
+        if channel_name in log_channels:
+            if index < 0:
+                index = len(log_channels) + index  # Note the additional +1. -1 moves to the end.
+            self.set_log_position(channel_name, index)
 
     def add_equation(self, channel_name, equation, variables):
         """ A helper function to add channel relation.
@@ -435,6 +460,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
         else:
             self.updateStepChannelsByDict({channel_name: {'EQ': 'p1', 'VARS': {'x': 'Step values',
                 'p1': {'channel_name': ref_channel_name, 'lookup_x': lookup_table[0], 'lookup_y': lookup_table[1]}}}})
+
 
     def update_step_parameters(self, channel_name,
                                sweep_rate=None,
@@ -489,7 +515,7 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         if sweep_rate is not None:
             channel = self.getStepChannel(channel_name)
-            if channel is not None and channel['sweep_mode'].lower() != 'Off':
+            if channel is not None and channel['sweep_mode'].lower() != 'off':
                 for step_item in channel['step_items']:
                     step_item['sweep_rate'] = sweep_rate
 
@@ -536,15 +562,19 @@ class ScriptObject(ScriptTools.MeasurementObject):
             #    return
             if(itemType == 'PARAM'):
                 for param_name, param_value in value.items():
-                    channel[param_name] = param_value
+                    setattr(channel, param_name, param_value)
+                    #channel[param_name] = param_value
                 return
             if(itemType == 'EQ'):
-                channel['equation'] = value
+                #channel['equation'] = value
+                setattr(channel, 'equation', value)
                 set_sweep_parameter(channel, {
                                     'use_relations': True}, 'PARAM', index)
                 return
             if(itemType == 'VARS'):
-                channel['relation_parameters'] = []
+                setattr(channel, 'relation_parameters', [])
+                XXXX continue here
+                #channel['relation_parameters'] = []
                 for dict_param, dict_value in value.items():
                     if(isinstance(dict_value, dict)):
                         if 'interp' in dict_value.keys():
@@ -1026,6 +1056,11 @@ class ScriptObject(ScriptTools.MeasurementObject):
         """
 
         self.scenario['settings'].update(settings_dict)
+
+
+    def activate_hardware_loop(self):
+        # XXX
+        pass
 
 
     def updateInstrumentValueFullName(self, full_name, value):
