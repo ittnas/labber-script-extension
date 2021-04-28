@@ -439,7 +439,7 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
             elif self.getStepChannel(value) is None and value != 'Step values':
                 self.addStepChannel(value)
 
-    def write_lookup(self, lookup_table, channel_name, ref_channel_name, add_current_value=True):
+    def write_lookup(self, lookup_table, channel_name, ref_channel_name, add_current_value=True, interp='Linear'):
         """ A wrapper to write a lookup table for a channel in equation. Not that this will override the existing equation. The full functionality can be achieved with add_equation() function.
 
     Args:
@@ -447,18 +447,21 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         channel_name (Str): Channel name of channel that obtains lookup table.
         ref_channel_name (Str): Reference channel name.
         add_current_value (bool, optional): If True, current value of the channel is added to the lookup table.
+        interp (str): Interpolation function. Can be one of ['Linear', 'Nearest', 'Quadratic', 'Cubic'].
     """
 
         if add_current_value:
             self.updateStepChannelsByDict({
                 channel_name: {
                     'EQ': 'x+p1',
-                    'VARS': {'x': 'Step values', 'p1': {'channel_name': ref_channel_name, 'lookup_x': lookup_table[0], 'lookup_y': lookup_table[1]}}
+                    'VARS': {
+                        'x': 'Step values', 'p1': {'channel_name': ref_channel_name, 'lookup_x': lookup_table[0], 'lookup_y': lookup_table[1], 'interp': interp}
+                    }
                 }
             })
         else:
             self.updateStepChannelsByDict({channel_name: {'EQ': 'p1', 'VARS': {'x': 'Step values',
-                'p1': {'channel_name': ref_channel_name, 'lookup_x': lookup_table[0], 'lookup_y': lookup_table[1]}}}})
+                'p1': {'channel_name': ref_channel_name, 'lookup_x': lookup_table[0], 'lookup_y': lookup_table[1], 'interp': interp}}}})
 
     def update_step_parameters(self, channel_name,
                                sweep_rate=None,
@@ -476,6 +479,7 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
             sweep_rate (double): Rate at which the value should be changed (unit/s)
             wait_after (double): Number of seconds to wait after the value is set.
             after_last (str): What to do after sweep is finished. Either 'Goto first point', 'Stay at final', or 'Goto value...' (yes, there are three dots in the string).
+            sweep_mode (str): Must be one of ['Between points', 'Off', 'Continuous'].
             final_value (double): Final value for the instrument. If given, will set after_last to 'Goto value...'.
             use_outside_sweep_rate (bool): Boolean indicating whether to use different sweep rate outside.
             sweep_rate_outside (double): Sweep rate outside of loop. If value other than zero is given, use_outside_sweep_rate is set to True.
