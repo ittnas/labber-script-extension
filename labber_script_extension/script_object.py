@@ -439,7 +439,6 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
             elif self.getStepChannel(value) is None and value != 'Step values':
                 self.addStepChannel(value)
 
-
     def write_lookup(self, lookup_table, channel_name, ref_channel_name, add_current_value=True):
         """ A wrapper to write a lookup table for a channel in equation. Not that this will override the existing equation. The full functionality can be achieved with add_equation() function.
 
@@ -449,7 +448,7 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         ref_channel_name (Str): Reference channel name.
         add_current_value (bool, optional): If True, current value of the channel is added to the lookup table.
     """
-        
+
         if add_current_value:
             self.updateStepChannelsByDict({
                 channel_name: {
@@ -460,7 +459,6 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         else:
             self.updateStepChannelsByDict({channel_name: {'EQ': 'p1', 'VARS': {'x': 'Step values',
                 'p1': {'channel_name': ref_channel_name, 'lookup_x': lookup_table[0], 'lookup_y': lookup_table[1]}}}})
-
 
     def update_step_parameters(self, channel_name,
                                sweep_rate=None,
@@ -519,7 +517,6 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
                 for step_item in channel['step_items']:
                     step_item['sweep_rate'] = sweep_rate
 
-
     def updateValue(self, channel_name, value, itemType='SINGLE', step_index=None):
         """
         Update a value in the config file.
@@ -555,6 +552,7 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         """
         if value is None:
             logging.warning('Trying to update channel ' + channel_name + ' with None value')
+
         def set_sweep_parameter(channel, value, itemType, index):
             # if(not np.isscalar(value)):
             #    channel['relation_parameters'][0]['use_lookup'] = True
@@ -572,138 +570,150 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
                                     'use_relations': True}, 'PARAM', index)
                 return
             if(itemType == 'VARS'):
+                # Constructs relation_parameters object
                 setattr(channel, 'relation_parameters', [])
-                XXXX continue here
+                if 'x' not in value.keys():
+                    step_channels_relation_parameter = Labber.config.step.RelationParameter()
+                    step_channels_relation_parameter.variable = 'x'
+                    step_channels_relation_parameter.channel_name = 'Step values'
+                    channel.relation_parameters.append(step_channels_relation_parameter)
                 #channel['relation_parameters'] = []
                 for dict_param, dict_value in value.items():
-                    if(isinstance(dict_value, dict)):
-                        if 'interp' in dict_value.keys():
-                            interp = dict_value['interp']
-                        else:
-                            interp = 'Linear'
-                            channel['relation_parameters'].append({
-                                'variable': dict_param,
-                                'channel_name': dict_value['channel_name'],
-                                'use_lookup': True,
-                                'lookup': {
-                                    'interp': interp,
-                                    'xdata': np.array(dict_value['lookup_x']),
-                                    'ydata': np.array(dict_value['lookup_y'])
-                                }
-                            })
+                    relation_parameter = Labber.config.step.RelationParameter()
+                    relation_parameter.variable = dict_param
+                    if isinstance(dict_value, dict):
+                        relation_parameter.use_lookup = True
+                        # if 'interp' in dict_value.keys():
+                        #     interp = dict_value['interp']
+                        # else:
+                        #     interp = 'Linear'
+                        for relation_key, relation_value in dict_value.items():
+                            if relation_key == 'lookup_x':
+                                relation_parameter.lookup.xdata = np.array(dict_value['lookup_x'])
+                            elif relation_key == 'lookup_y':
+                                relation_parameter.lookup.ydata = np.array(dict_value['lookup_y'])
+                            elif relation_key == 'interp':
+                                relation_parameter.lookup.interp = relation_value
+                            else:
+                                setattr(relation_parameter, relation_key, relation_value)
                     else:
-                        channel['relation_parameters'].append(
-                            {'variable': dict_param, 'channel_name': dict_value, 'use_lookup': False, 'lookup': None})
+                        relation_parameter.channel_name = dict_value
+                    channel.relation_parameters.append(relation_parameter)
                 set_sweep_parameter(channel, {
                     'use_relations': True}, 'PARAM', index)
 
                 return
 
             if index is None:
-                if (len(channel['step_items'])) > 0:
-                    del channel['step_items'][1:]
+                if (len(channel.range_items)) > 0:
+                    del channel.range_items[1:]
                 index = 0
 
-            if(index >= len(channel['step_items'])):
-                for ii in range(index-len(channel['step_items'])+1):
-                    channel['step_items'].append({
-                        'range_type': 'Start - Stop',
-                        'step_type': 'Fixed # of pts',
-                        'single': 0,
-                        'start': 0,
-                        'stop': 1,
-                        'center': 0.5,
-                        'span': 1,
-                        'step': 0.1,
-                        'n_pts': 1,
-                        'interp': 'Linear',
-                        'sweep_rate': 0.0
-                    })
+            if(index >= len(channel.range_items)):
+                for ii in range(index-len(channel.range_items)+1):
+                    range_item = Labber.config.step.RangeItem()
+                    range_item.n_pts = 1
+                    channel.range_items.append(range_item)
+                    # channel.range_items.append({
+                    #     'range_type': 'Start - Stop',
+                    #     'step_type': 'Fixed # of pts',
+                    #     'single': 0,
+                    #     'start': 0,
+                    #     'stop': 1,
+                    #     'center': 0.5,
+                    #     'span': 1,
+                    #     'step': 0.1,
+                    #     'n_pts': 1,
+                    #     'interp': 'Linear',
+                    #     'sweep_rate': 0.0
+                    # })
             if(itemType == 'SINGLE'):
-                channel['step_items'][index]['range_type'] = 'Single'
-                channel['step_items'][index]['single'] = value
+                channel.range_items[index].range_type = 'Single'
+                channel.range_items[index].single = value
                 set_sweep_parameter(channel, {
                     'use_relations': False}, 'PARAM', index)
             if(itemType == 'START'):
-                channel['step_items'][index]['range_type'] = 'Start - Stop'
-                channel['step_items'][index]['start'] = value
+                channel.range_items[index].range_type = 'Start - Stop'
+                channel.range_items[index].start = value
                 set_sweep_parameter(channel, {
                     'use_relations': False}, 'PARAM', index)
             if(itemType == 'STOP'):
-                channel['step_items'][index]['range_type'] = 'Start - Stop'
-                channel['step_items'][index]['stop'] = value
+                channel.range_items[index].range_type = 'Start - Stop'
+                channel.range_items[index].stop = value
                 set_sweep_parameter(channel, {
                     'use_relations': False}, 'PARAM', index)
 
             if(itemType == 'SPAN'):
-                channel['step_items'][index]['range_type'] = 'Center - Span'
-                channel['step_items'][index]['span'] = value
+                channel.range_items[index].range_type = 'Center - Span'
+                channel.range_items[index].span = value
                 set_sweep_parameter(channel, {
                     'use_relations': False}, 'PARAM', index)
             if(itemType == 'CENTER'):
-                channel['step_items'][index]['range_type'] = 'Center - Span'
-                channel['step_items'][index]['center'] = value
+                channel.range_items[index].range_type = 'Center - Span'
+                channel.range_items[index].center = value
                 set_sweep_parameter(channel, {
                     'use_relations': False}, 'PARAM', index)
             if(itemType == 'N_PTS'):
-                channel['step_items'][index]['step_type'] = 'Fixed # of pts'
-                channel['step_items'][index]['n_pts'] = int(value)
+                channel.range_items[index].step_type = 'Fixed # of pts'
+                channel.range_items[index].n_pts = int(value)
                 set_sweep_parameter(channel, {
                     'use_relations': False}, 'PARAM', index)
             if(itemType == 'STEP'):
-                channel['step_items'][index]['step_type'] = 'Fixed step'
-                channel['step_items'][index]['step'] = value
+                channel.range_items[index].step_type = 'Fixed step'
+                channel.range_items[index].step = value
                 set_sweep_parameter(channel, {
                     'use_relations': False}, 'PARAM', index)
 
         step_channels = self.getStepChannels()
         for current_channel in step_channels:
             # print(current_channel['channel_name'],channel_name)
-            if(channel_name == current_channel['channel_name']):
+            if(channel_name == current_channel.channel_name):
                 # und match: ' + channel_name + ' and ' + current_channel['channel_name'])
                 set_sweep_parameter(current_channel, value,
                                     itemType, step_index)
                 # Extend here with advanced options!
                 return
         # channel not found, add a new channel.
-        new_channel = {'channel_name': channel_name,
-                       'wait_after': 0.0,
-                       'final_value': 0.0,
-                       'show_advanced': False,
-                       'use_relations': False,
-                       'equation': 'x',
-                       'step_unit': 'Instrument',
-                       'after_last': 'Goto first point',
-                       'sweep_mode': 'Off',
-                       'use_outside_sweep_rate': False,
-                       'sweep_rate_outside': 0.0,
-                       'alternate_direction': False,
-                       'step_items': [{
-                           'range_type': 'Single',
-                           'step_type': 'Fixed # of pts',
-                           'single': 0,
-                           'start': 0,
-                           'stop': 1,
-                           'center': 0.5,
-                           'span': 1,
-                           'step': 0.1,
-                           'n_pts': 11,
-                           'interp': 'Linear',
-                           'sweep_rate': 0.0
-                       }],
-                       'relation_parameters': [{
-                           'variable': 'x',
-                           'channel_name': 'Step values',
-                           'use_lookup': False, 'lookup': None}],
-                       'optimizer_config': {
-                           'Enabled': False,
-                           'Start value': 7660000000.0,
-                           'Initial step size': 1532000000.0,
-                           'Min value': 7660000000.0,
-                           'Max value': 15320000000.0,
-                           'Precision': 766000.0}
-                       }
-        step_channels.append(new_channel)
+        new_channel = self.add_step(channel_name)
+        #new_channel = Labber.config.step.StepItem()
+        # new_channel = {'channel_name': channel_name,
+        #                'wait_after': 0.0,
+        #                'final_value': 0.0,
+        #                'show_advanced': False,
+        #                'use_relations': False,
+        #                'equation': 'x',
+        #                'step_unit': 'Instrument',
+        #                'after_last': 'Goto first point',
+        #                'sweep_mode': 'Off',
+        #                'use_outside_sweep_rate': False,
+        #                'sweep_rate_outside': 0.0,
+        #                'alternate_direction': False,
+        #                'step_items': [{
+        #                    'range_type': 'Single',
+        #                    'step_type': 'Fixed # of pts',
+        #                    'single': 0,
+        #                    'start': 0,
+        #                    'stop': 1,
+        #                    'center': 0.5,
+        #                    'span': 1,
+        #                    'step': 0.1,
+        #                    'n_pts': 11,
+        #                    'interp': 'Linear',
+        #                    'sweep_rate': 0.0
+        #                }],
+        #                'relation_parameters': [{
+        #                    'variable': 'x',
+        #                    'channel_name': 'Step values',
+        #                    'use_lookup': False, 'lookup': None}],
+        #                'optimizer_config': {
+        #                    'Enabled': False,
+        #                    'Start value': 7660000000.0,
+        #                    'Initial step size': 1532000000.0,
+        #                    'Min value': 7660000000.0,
+        #                    'Max value': 15320000000.0,
+        #                    'Precision': 766000.0}
+        #                }
+        #step_channels.append(new_channel)
         # print(channel_name)
 
         # In order to designate the channel to the correct instrument, instrument name needs to be extacted.
@@ -751,12 +761,13 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
             self.addChannel(None, None, full_name=source)
             source_channel = self.getChannel(source)
 
-        target_channel['signal_source'] = source
+        self.add_connection(source, target)
+        #target_channel.signal_source = source
 
     '''
     def removeSignalConnection(self, target):
         """Deletes a signal connection.
-        
+
         Args:
             target (str): Target channel for which the signal connection is to be removed.
         """
@@ -787,54 +798,60 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
             value = self.getChannelValue(step_channel_name)
         if value is None:
             value = 0.0
-        new_channel = {'channel_name': step_channel_name,
-                       'wait_after': 0.0,
-                       'final_value': 0.0,
-                       'show_advanced': False,
-                       'use_relations': False,
-                       'equation': 'x',
-                       'step_unit': 'Instrument',
-                       'after_last': 'Goto first point',
-                       'sweep_mode': 'Off',
-                       'use_outside_sweep_rate': False,
-                       'sweep_rate_outside': 0.0,
-                       'alternate_direction': False,
-                       'step_items': [{
-                           'range_type': 'Single',
-                           'step_type': 'Fixed # of pts',
-                           'single': value,
-                           'start': 0,
-                           'stop': 1,
-                           'center': 0.5,
-                           'span': 1,
-                           'step': 0.1,
-                           'n_pts': 11,
-                           'interp': 'Linear',
-                           'sweep_rate': 0.0
-                       }],
-                       'relation_parameters': [{
-                           'variable': 'x',
-                           'channel_name': 'Step values',
-                           'use_lookup': False, 'lookup': None}],
-                       'optimizer_config': {
-                           'Enabled': False,
-                           'Start value': 7660000000.0,
-                           'Initial step size': 1532000000.0,
-                           'Min value': 7660000000.0,
-                           'Max value': 15320000000.0,
-                           'Precision': 766000.0}
-                       }
+        # new_channel = {'channel_name': step_channel_name,
+        #                'wait_after': 0.0,
+        #                'final_value': 0.0,
+        #                'show_advanced': False,
+        #                'use_relations': False,
+        #                'equation': 'x',
+        #                'step_unit': 'Instrument',
+        #                'after_last': 'Goto first point',
+        #                'sweep_mode': 'Off',
+        #                'use_outside_sweep_rate': False,
+        #                'sweep_rate_outside': 0.0,
+        #                'alternate_direction': False,
+        #                'step_items': [{
+        #                    'range_type': 'Single',
+        #                    'step_type': 'Fixed # of pts',
+        #                    'single': value,
+        #                    'start': 0,
+        #                    'stop': 1,
+        #                    'center': 0.5,
+        #                    'span': 1,
+        #                    'step': 0.1,
+        #                    'n_pts': 11,
+        #                    'interp': 'Linear',
+        #                    'sweep_rate': 0.0
+        #                }],
+        #                'relation_parameters': [{
+        #                    'variable': 'x',
+        #                    'channel_name': 'Step values',
+        #                    'use_lookup': False, 'lookup': None}],
+        #                'optimizer_config': {
+        #                    'Enabled': False,
+        #                    'Start value': 7660000000.0,
+        #                    'Initial step size': 1532000000.0,
+        #                    'Min value': 7660000000.0,
+        #                    'Max value': 15320000000.0,
+        #                    'Precision': 766000.0}
+        #                }
 
         if step_channel_name in self.getStepChannelNames():
-            return
-        step_channels = self.getStepChannels()
-        step_channels.append(new_channel)
+            pass
+        else:
+            self.add_step(step_channel_name)
+
+        if value is not None:
+            self.updateValue(step_channel_name, value)
+
+        # step_channels = self.getStepChannels()
+        # step_channels.append(new_channel)
 
     def copy_step_channel(self, old_channel_name, new_channel_name):
         old_step_channel = self.getStepChannel(old_channel_name)
         if old_step_channel is not None:
             new_step_channel = copy.deepcopy(old_step_channel)
-            new_step_channel['channel_name'] = new_channel_name
+            new_step_channel.channel_name = new_channel_name
             self.removeStepChannel(new_channel_name)
             self.getStepChannels().append(new_step_channel)
 
@@ -861,34 +878,37 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         if value is not None:
             self.updateInstrumentValue(instrument_name, quantity, value)
 
-        for channel in self.scenario['channels']:
-            if(channel['instrument'] == instrument_name and channel['quantity'] == quantity):
+        for channel in self.channels:
+            if(channel.instrument == instrument_name and channel.quantity == quantity):
                 # Channel already exitst
                 if name is not None:
                     self.nameChannel(instrument_name + ' - ' + quantity, name)
                 if physical_unit is not None:
-                    channel['unit_physical'] = physical_unit
+                    channel.unit_physical = physical_unit
                 if instrument_unit is not None:
-                    channel['unit_instrument'] = instrument_unit
+                    channel.unit_instrument = instrument_unit
                 return
 
-        channel = {
-            'instrument': instrument_name,
-            'quantity': quantity,
-        }
+        channel = Labber.config.scenario.Channel()
+        channel.instrument = instrument_name
+        channel.quantity = quantity
+        # channel = {
+        #     'instrument': instrument_name,
+        #     'quantity': quantity,
+        # }
         if physical_unit is not None:
-            channel['unit_physical'] = physical_unit
+            channel.unit_physical = physical_unit
         if instrument_unit is not None:
-            channel['unit_instrument'] = instrument_unit
+            channel.unit_instrument = instrument_unit
         if name is not None:
-            channel['name'] = name
-        self.scenario['channels'].append(channel)
+            channel.name = name
+        self.channels.append(channel)
 
     def nameChannel(self, old_name, new_name):
         """ Gives a nick name to the channel.
 
         In addition to naming the channel, renames all the step channels and log channels to which
-        old_name of the channel refers to.
+        old_name of the channel refers to. Currently does not rename signal connections.
         Args:
             old_name (str): Full name of the channel in format 'instrument - quantity' or the nick name of the channel.
             nick_name (str): The name with which the channel should be called. If None, nick Name is removed.
@@ -896,34 +916,34 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         channel = self.getChannel(old_name)
 
         if channel is not None:
-            full_channel_name = channel['instrument'] + ' - ' + channel['quantity']
-            if 'name' in channel:
-                nick_name = channel['name']
+            full_channel_name = channel.instrument + ' - ' + channel.quantity
+            if channel.name is not None:
+                nick_name = channel.name
             else:
                 nick_name = None
             if new_name is not None:
-                channel['name'] = new_name
+                channel.name = new_name
             else:
-                if 'name' in channel:
-                    del(channel['name'])
+                if hasattr(channel, 'name'):
+                    channel.name = None
             step_channel = self.getStepChannel(old_name)
             if step_channel is None:
                 step_channel = self.getStepChannel(nick_name)
             if step_channel is not None:
                 if new_name is not None:
-                    step_channel['channel_name'] = new_name
+                    step_channel.channel_name = new_name
                 else:
-                    step_channel['channel_name'] = full_channel_name
+                    step_channel.channel_name = full_channel_name
             for ii, log_channel in enumerate(self.getLogChannels()):
                 if log_channel == old_name or log_channel == nick_name:
                     if new_name is not None:
                         self.getLogChannels()[ii] = new_name
                     else:
-                        self.getLogChannels()[ii] = channel['instrument'] + ' - ' + channel['quantity']
+                        self.getLogChannels()[ii] = channel.instrument + ' - ' + channel.quantity
 
     def setParameter(self, name, value):
         """
-        Sets a parameter value pair for the measurement object.
+        Sets a parameter value pair for the scenario.
 
         Currently available name/value pairs are
         'log_parallel': bool - - ??
@@ -938,8 +958,9 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         """
 
         # TODO somehow test the validity of the given parameters, e.g check if the instruments support hardware looping
-        if name in self.scenario['parameters']:
-            self.scenario['parameters'][name] = value
+        logging.warning('This function is depracated in Scenario object. Most of these items are now in settings.')
+        if hasattr(self, name):
+            setattr(self, name, value)
         else:
             logging.warning('Parameter ' + name + ' does not exist.')
 
@@ -948,7 +969,7 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         Add a comment to the measurement.
         """
         if comment is not None:
-            self.scenario['parameters']['comment'] = comment
+            self.comment = comment
 
     def setTags(self, tags, override=True):
         """
@@ -961,14 +982,14 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         if isinstance(tags, list):
 
             if override:
-                self.scenario['tags']['tags'] = tags
+                self.tags.tags = tags
             else:
-                self.scenario['tags']['tags'].extend(tags)
+                self.tags.tags.extend(tags)
         else:
             if override:
-                self.scenario['tags']['tags'] = [tags]
+                self.tags.tags = [tags]
             else:
-                self.scenario['tags']['tags'].append(tags)
+                self.tags.tags.append(tags)
 
     def setUser(self, user):
         """
@@ -977,7 +998,7 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         Arguments:
                 user(str) - - Name of the user.
         """
-        self.scenario['tags']['user'] = user
+        self.tags.user = user
 
     def setProject(self, project):
         """
@@ -986,7 +1007,7 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         Arguments:
                 project(str) - - Name of the project.
         """
-        self.scenario['tags']['project'] = project
+        self.tags.project = project
 
     def setLogChannels(self, log_channels, override=False):
         """
@@ -1008,12 +1029,12 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
                     self.addChannel(split_name[0], split_name[1])
 
             if override:
-                self.scenario['log_channels'] = log_channels
+                self.log_channels = log_channels
             else:
                 current_log_channels = self.getLogChannels()
                 # self.scenario['log_channels'] = list(set(current_log_channels) | set(log_channels)) # remove duplicates
                 current_log_channels.extend(log_channels)
-                self.scenario['log_channels'] = sorted(
+                self.log_channels = sorted(
                     set(current_log_channels), key=current_log_channels.index)  # remove duplicates
                 # self.scenario['log_channels'].extend(log_channels)
         else:
@@ -1025,10 +1046,10 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
                 self.addChannel(split_name[0], split_name[1])
 
             if override:
-                self.scenario['log_channels'] = [log_channels]
+                self.scenario.log_channels = [log_channels]
             else:
-                if log_channels not in self.scenario['log_channels']:
-                    self.scenario['log_channels'].append(log_channels)
+                if log_channels not in self.log_channels:
+                    self.log_channels.append(log_channels)
 
     def updateSettings(self, settings_dict):
         """
@@ -1055,18 +1076,52 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         'opt-Bayesian-Gaussian-Process: xi': 0.1,
         """
 
-        self.scenario['settings'].update(settings_dict)
+        for key, value in settings_dict.items():
+            if hasattr(self.settings, key):
+                setattr(self.settings, key, value)
+            else:
+                logging.warning(f'Setting {key} not available.')
 
+    def activate_hardware_loop(self, trigger_channel, hardware_loop_depth=1):
+        """ Activates hardware looping.
 
-    def activate_hardware_loop(self):
+        Args:
+            trigger_channel (str): Name of the channel that is used for triggering the hardware loop.
+            hardware_loop_depth (int): Limits the hardware looping to n first steps. 0 means no limitiations. Negative values indicate that hardware looping should be disabled.
+
+        """
+        if hardware_loop_depth < 0:
+            self.updateSettings({
+                'hardware_loop': False
+            })
+            return
+        else:
+            self.updateSettings({
+                'hardware_loop': True
+            })
+
+        if hardware_loop_depth < 1:
+            self.updateSettings({
+                'limit_hardware_looping': False
+            })
+        else:
+            self.updateSettings({
+                'limit_hardware_looping': True
+            })
+
+        self.updateSettings({
+            'n_items_hardware_loop': hardware_loop_depth,
+            'arm_trig_mode': True,
+            'trig_channel': trigger_channel,
+        })
+
         # XXX
         pass
-
 
     def updateInstrumentValueFullName(self, full_name, value):
         """
         This is a wrapper to updateInstrumentValue, which allows you to add full_name.
-        
+
         Args:
            full_name (str): Full name of the instrument value to be set. Format: "[Instrument name] - [Channel name]"
            value (float): The value of the parameter.
@@ -1134,88 +1189,6 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
                             self.updateValue(name, list_value,
                                              itemType='SINGLE', step_index=ii)
 
-    def updateValuesByArrays(self, globals_path, tags=None, comment=None, user=None, project=None, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None, override_log_channels=False,local_settings={}):
-        """
-        Updates the measurement object using parameter dictionaries.
-        """
-        sys.path.append(globals_path)
-        gl = __import__(globals_file_name)
-
-        self.updateInstrumentValuesByDict(gl.instrument_values)
-        self.updateInstrumentValuesByDict(local_instrument_values)
-
-        self.updateStepChannelsByDict(gl.step_channels)
-        self.updateStepChannelsByDict(local_step_channels)
-        self.updateSettings(local_settings)
-        self.updateStepChannelsByDict(looped_variables)
-#        for instrument_name,parameter_dict in gl.instrument_values.items():
-#            for parameter_name,value in parameter_dict.items():
-#                self.updateInstrumentValue(instrument_name,parameter_name,value)
-#
-#        for instrument_name,parameter_dict in local_instrument_values.items():
-#            for parameter_name,value in parameter_dict.items():
-#                self.updateInstrumentValue(instrument_name,parameter_name,value)
-
-
-#        for name, value in gl.step_channels.items():
-#            #try:
-#            if isinstance(value,dict):
-#                for dict_key, dict_value in value.items():
-#                    self.updateValue(name,dict_value,itemType=dict_key)
-#            else:
-#                self.updateValue(name, value, itemType='SINGLE')
-#
-#
-#            #measurement_object.updateValue(name, value, itemType='SINGLE')
-#            #except Exception as e:
-#            #   logging.warning('Unable to set variable ' + name +'.') # Does nothing at the moment
-#
-#
-#        for name, value in local_step_channels.items():
-#            if isinstance(value,dict):
-#                for dict_key, dict_value in value.items():
-#                    self.updateValue(name,dict_value,itemType=dict_key)
-#            else:
-#                self.updateValue(name, value, itemType='SINGLE')
-
-#        for name,value in looped_variables.items():
-#            if isinstance(value,dict): # Only a single dictionary
-#                for dict_key, dict_value in value.items():
-#                    self.updateValue(name,dict_value,itemType=dict_key)
-#            else: # list of step items
-#                for ii,list_value in enumerate(value): # loop over all the steps
-#                    if isinstance(list_value,dict): # this step is a dictionary describing the step
-#                        for dict_key, dict_value in list_value.items():
-#                            self.updateValue(name,dict_value,itemType=dict_key,step_index=ii)
-#                    else: # this step is just a single point
-#                        self.updateValue(name,list_value,itemType='SINGLE',step_index=ii)
-
-        counter = 0
-        for name in looped_variables.keys():
-            self.move_channel_to(name, counter)
-            counter = counter+1
-
-        if gl.log_channels is not None:
-            self.setLogChannels(log_channels, override_log_channels)
-
-        if log_channels is not None:
-            self.setLogChannels(log_channels, override_log_channels)
-
-        for name, value in gl.parameters.items():
-            self.setParameter(name, value)
-
-        for name, value in local_parameters.items():
-            self.setParameter(name, value)
-
-        if user is not None:
-            self.setUser(user)
-        if comment is not None:
-            self.setComment(comment)
-        if project is not None:
-            self.setProject(project)
-        if tags is not None:
-            self.setTags(tags)
-
     def getOutputPathOfPreviousMeasurement(self):
         """
         Returns the full path of the log file created by the previous measurement.
@@ -1225,34 +1198,43 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         print('Warning! getOutputPathOfPreviousMeasurement() is not implmented correctly at the moment.')
         return self.file_out + '.hdf5'
 
+    def update_optimizer_settings(self, optimizer_parameters):
+        """ Updates general optimizer parmaters.
 
-    def useLabberOptimizer(self, opt_channels, general_settings):
+        Args:
+            optimizer_parameters (dict): dict of setting/value pairs.
+        """
+        optimizer = self.optimizer  #Labber.config.scenario.Optimizer(**optimizer_parameters)
+        for key, value in optimizer_parameters.items():
+            setattr(optimizer, key, value)
+
+    def useLabberOptimizer(self, opt_channels, general_settings={}):
         """Activate Labber optimization.
         
         Args:
             opt_channels (dict): Keys are optimization channels, values are optimizer config:
             Example: opt_channels=
-                {'param1': {'Enabled': True,
-                            'Initial step size': 0.05,
-                            'Max value': 1.0,
-                            'Min value': 0.0,
-                            'Precision': 0.001,
-                            'Start value': 0.5},
-                {'param2': {'Enabled': True,
-                            'Initial step size': 10e6,
-                            'Max value': 5e9,
-                            'Min value': 4e9,
-                            'Precision': 1e6,
-                            'Start value': 4.5e9}}
+                {'param1': {'enabled': True,
+                            'initial_step_size': 0.05,
+                            'max_value': 1.0,
+                            'min_value': 0.0,
+                            'precision': 0.001,
+                            'start_value': 0.5},
+                {'param2': {'enabled': True,
+                            'initial_step_size': 10e6,
+                            'max_value': 5e9,
+                            'min_value': 4e9,
+                            'precision': 1e6,
+                            'start_value': 4.5e9}}
             general_settings (dict): General optimizer settings, should contain 
-            {'Max evaluations': 200,
-                'Method': 'Nelder-Mead',
-                'Minimization function': '1-y[0]',
-                'Target value': 0.0,
-                'Relative tolerance': 0.02}
+            {'max_evaluations': 200,
+                'method': 'Nelder-Mead',
+                'minimization_function': '1-y[0]',
+                'target_value': 0.0,
+                'relative_tolerance': 0.02}
         """
 
-        step_channels=self.getStepChannels()
+        step_channels = self.getStepChannels()
 
         #go through optimization channels
         for channel, opt_settings in opt_channels.items():
@@ -1262,152 +1244,12 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
 
             #go through list of step channels and write settings to Labber optimizer config
             for i, step_ch in enumerate(step_channels):
-                if step_ch['channel_name']==channel:
-                    step_channels[i]['optimizer_config'].update(opt_settings)
+                if step_ch.channel_name == channel:
+                    optimizer = Labber.config.step.OptimizerItem(**opt_settings)
+                    step_channels[i].optimizer_config = optimizer
 
         #general optimizer settings
-        self.scenario['settings'].update(general_settings)
-
-
-def updateAndPerformMeasurement_old(template_path, output_directory_root, output_file_name, tags, comment, globals_path, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None):
-    now = datetime.datetime.now()
-    output_directory = os.path.join(output_directory_root, '/{:d}/{:02d}/Data_{:02d}{:02d}/'.format(
-        now.year, now.month, now.month, now.day))
-    output_path = os.path.join(output_directory, output_file_name)
-    output_log_file = os.path.join(output_directory, output_file_name) + '.log'
-    print(output_log_file)
-    script_name = os.path.realpath(__file__)
-
-    sys.path.append(globals_path)
-    gl = __import__(globals_file_name)
-
-    now = datetime.datetime.now()
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-
-    logging.basicConfig(filename=output_log_file,
-                        format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG)
-    root = logging.getLogger()
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.INFO)
-    root.addHandler(handler)
-    # measurement_object=ScriptTools.load_scenario_as_dict(template_path)
-    measurement_object = ScriptObject(template_path, output_path)
-
-    logging.info("Starting measurement " + output_file_name)
-
-    for instrument_name, parameter_dict in gl.instrument_values.items():
-        for parameter_name, value in parameter_dict.items():
-            measurement_object.updateInstrumentValue(
-                instrument_name, parameter_name, value)
-
-    for instrument_name, parameter_dict in local_instrument_values.items():
-        for parameter_name, value in parameter_dict.items():
-            measurement_object.updateInstrumentValue(
-                instrument_name, parameter_name, value)
-
-    for name, value in gl.step_channels.items():
-        # try:
-        if isinstance(value, dict):
-            for dict_key, dict_value in value.items():
-                measurement_object.updateValue(
-                    name, dict_value, itemType=dict_key)
-        else:
-            measurement_object.updateValue(name, value, itemType='SINGLE')
-        # measurement_object.updateValue(name, value, itemType='SINGLE')
-        # except Exception as e:
-        #   logging.warning('Unable to set variable ' + name +'.') # Does nothing at the moment
-
-    for name, value in local_step_channels.items():
-        if isinstance(value, dict):
-            for dict_key, dict_value in value.items():
-                measurement_object.updateValue(
-                    name, dict_value, itemType=dict_key)
-        else:
-            measurement_object.updateValue(name, value, itemType='SINGLE')
-
-    for name, value in looped_variables.items():
-        if isinstance(value, dict):  # Only a single dictionary
-            for dict_key, dict_value in value.items():
-                measurement_object.updateValue(
-                    name, dict_value, itemType=dict_key)
-        else:  # list of step items
-            for ii, list_value in enumerate(value):  # loop over all the steps
-                # this step is a dictionary describing the step
-                if isinstance(list_value, dict):
-                    for dict_key, dict_value in list_value.items():
-                        measurement_object.updateValue(
-                            name, dict_value, itemType=dict_key, step_index=ii)
-                else:  # this step is just a single point
-                    measurement_object.updateValue(
-                        name, list_value, itemType='SINGLE', step_index=ii)
-
-    counter = 0
-    for name in looped_variables.keys():
-        measurement_object.move_channel_to(name, counter)
-        counter = counter+1
-
-    if gl.log_channels is not None:
-        measurement_object.setLogChannels(log_channels)
-
-    if log_channels is not None:
-        measurement_object.setLogChannels(log_channels)
-
-    for name, value in gl.parameters.items():
-        measurement_object.setParameter(name, value)
-
-    for name, value in local_parameters.items():
-        measurement_object.setParameter(name, value)
-
-    # sys.exit("Error message")
-    # Copy the currently running script
-    copyfile(script_name, output_path + ".py")
-    # raise Exception('Debugging')
-    measurement_object.performMeasurement()
-
-    Lfile = Labber.LogFile(output_path + '.hdf5')
-
-    tags.extend(gl.tags)
-    Lfile.setTags(tags)
-    Lfile.setUser(gl.user)
-    Lfile.setComment(comment)
-    Lfile.setProject(gl.project)
-
-
-def updateAndPerformMeasurement(template_path, output_directory_root, output_file_name, tags, comment, globals_path, globals_file_name=globals, local_step_channels={}, looped_variables={}, local_parameters={}, local_instrument_values={}, log_channels=None,local_settings={}):
-    print('Entering')
-    now = datetime.datetime.now()
-    output_directory = output_directory_root + \
-        '/{:d}/{:02d}/Data_{:02d}{:02d}/'.format(
-            now.year, now.month, now.month, now.day)
-    output_path = os.path.join(output_directory, output_file_name)
-    output_log_file = os.path.join(output_directory, output_file_name) + '.log'
-    print(output_log_file)
-    print('Output path: ' + output_path)
-    script_name = os.path.realpath(__file__)
-
-    sys.path.append(globals_path)
-    gl = __import__(globals_file_name)
-
-    now = datetime.datetime.now()
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-
-    logging.basicConfig(filename=output_log_file,
-                        format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG)
-    root = logging.getLogger()
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.INFO)
-    root.addHandler(handler)
-    # measurement_object=ScriptTools.load_scenario_as_dict(template_path)
-
-    logging.info("Starting measurement " + output_file_name)
-
-    tags.extend(gl.tags)
-    measurement_object = ScriptObject(template_path, output_path)
-    measurement_object.updateValuesByArrays(globals_path, tags=tags, comment=comment, user=gl.user, project=gl.project, globals_file_name=globals_file_name, local_step_channels=local_step_channels,
-                                            looped_variables=looped_variables, local_parameters=local_parameters, local_instrument_values=local_instrument_values, log_channels=log_channels, override_log_channels=False,local_settings=local_settings)
-    return measurement_object.performMeasurement()
+        self.update_optimizer_settings(general_settings)
 
 
 def get_full_output_path(output_directory_root, output_file_name):
