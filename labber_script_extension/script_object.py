@@ -58,7 +58,7 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
             filename (str): name of the saved binary.
         """
         #ScriptTools.save_scenario_as_binary(self.scenario, filename)
-        self.scenario.save(filename)
+        self.save(filename)
 
     def setMasterChannel(self, channel_name):
         """
@@ -329,7 +329,10 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
                 return None
         for current_instrument in self.instruments:
             if instrument_name == current_instrument.com_config.name:
-                return current_instrument.values[quantity_name]
+                if quantity_name in current_instrument.values:
+                    return current_instrument.values[quantity_name]
+                else:
+                    return None
 
     def printStepChannels(self, filter_string=None, instrument_name=None, verbose=False):
         """
