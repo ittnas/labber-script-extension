@@ -305,6 +305,48 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         log_channels = self.log_channels
         return log_channels
 
+    def getRangeItemValues(self, range_item):
+        """ Returns values represented by range_item.
+
+        Args:
+            range_item (Labber.config.step.RangeItem): Labber range object
+        Returns:
+            Numpy array of values represented by range item.
+        """
+        if range_item.range_type == Labber.config.step.RangeType.SINGLE:
+            return [range_item.single]
+        elif range_item.range_type == Labber.config.step.RangeType.CENTERSPAN:
+            if range_item.step_type == Labber.config.step.RangeStep.N_PTS:
+                return range_item.center + np.linspace(-range_item.span/2, range_item.span/2, range_item.n_pts)
+            else:
+                return range_item.center + np.arange(-range_item.span/2, range_item.span/2+range_item.step, range_item.step)
+        elif range_item.range_type == Labber.config.step.RangeType.STARTSTOP:
+            if range_item.step_type == Labber.config.step.RangeStep.N_PTS:
+                return np.linspace(range_item.start, range_item.stop, range_item.n_pts)
+            else:
+                return np.arange(range_item.start, range_item.stop+range_item.step, range_item.step)
+
+        logging.warning('range_item has invalued value of RangeType or RangeStep')
+        return None
+
+    def getStepChannelValues(self, channel_name):
+        """ Returns the values of a step channel in a list.
+
+        Args:
+            channel_name (str): Name of the step_channel.
+
+        Returns:
+            Numpy array of channel values.
+        """
+        channel = self.getStepChannel(channel_name)
+        if channel is None:
+            logging.warning(f'Step channel {channel_name} not found. Returning None.')
+            return None
+        values = np.array([])
+        for range_item in channel.range_items:
+            values = np.append(values, self.getRangeItemValues(range_item))
+        return values
+
     def getChannelValue(self, channel_name):
         """ Returns the value of a channel.
 
