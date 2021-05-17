@@ -21,9 +21,19 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
         Labber.Scenario.__init__(self, sCfgFileIn)
         #self.file_in = sCfgFileIn
         self.file_out = sCfgFileOut
+        #self.log_name = sCfgFileOut
         #self.scenario = ScriptTools.load_scenario_as_dict(self.file_in)
         #self.scenario = Labber.Scenario(self.file_in)
         self.primary_channel = None  # XXX
+
+    # For backwards compability. Scenario object uses log_name
+    @property
+    def file_out(self):
+        return self.log_name
+
+    @file_out.setter
+    def file_out(self, s):
+        self.log_name = s
 
     def performMeasurement(self, return_data=True, **kwargs):
         """ Performs the measurement.
@@ -331,6 +341,8 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
 
     def getStepChannelValues(self, channel_name):
         """ Returns the values of a step channel in a list.
+
+        Note that this function does not currently support lookup tables or equations, and returns an incorrect value if they are used.
 
         Args:
             channel_name (str): Name of the step_channel.
