@@ -1208,6 +1208,40 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
                 self.updateInstrumentValue(
                     instrument_name, parameter_name, value)
 
+    def update_step_values(self,
+                           channel_name,
+                           values=None,
+                           center=None,
+                           span=None,
+                           start=None,
+                           stop=None,
+                           n_pts=None,
+                           step=None,
+                           channel_position=None,
+                           range_index=None,
+                           override_existing=True
+    ):
+        """ Updates a step channel, or creates a new channel if it does not exist.
+
+        This function is a more user-friendly version of updateValue. If step channel does not exist, a new channel is created. Calling this function disables equation from the channel. There are multiple ways to provide the values of the step channel. If values is not None, it is used as the source. Second option is center - span. Lowest priority is given to start-stop. The range is created either by using n_pts or a fixed step. If channel_position is given, the step channel is moved to that position in the list of step_channels. If range_index is given, the new values are added to the list of range_items for that step in the given position. If override_existing is True, range_item in that position is overridden, or if range_item is None, all the range_items are overridden.
+
+        Args:
+            channel_name (str):
+            values (float or list):
+            channel_position (int or None):
+            range_index (int or None):
+            override_existing (bool): If True, all existing range items will be overridden.
+        Returns:
+            List of step values or None if channel does not exists and cannot be created.
+        """
+        if values is not None:
+            if isinstance(values, Iterable):
+                for ii, value in enumerate(values):
+                    self.updateValue(channel_name, values,
+                                     itemType='SINGLE', step_index=ii)
+        logging.warning('update_step_values is not implemented')
+        return self.getStepChannelValues(channel_name)
+
     def updateStepChannelsByDict(self, step_channels, skip_nones=False):
         """
         Updates step channels that are stored in a dictionary.
