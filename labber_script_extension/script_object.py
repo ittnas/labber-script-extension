@@ -1027,11 +1027,44 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         self.scenario['settings'].update(settings_dict)
 
+    def activate_hardware_loop(self, trigger_channel, hardware_loop_depth=1):
+        """ Activates hardware looping.
+
+        Args:
+            trigger_channel (str): Name of the channel that is used for triggering the hardware loop.
+            hardware_loop_depth (int): Limits the hardware looping to n first steps. 0 means no limitiations.
+                                       Negative values indicate that hardware looping should be disabled.
+
+        """
+        if hardware_loop_depth < 0:
+            self.updateSettings({
+                'hardware_loop': False
+            })
+            return
+        else:
+            self.updateSettings({
+                'hardware_loop': True
+            })
+
+        if hardware_loop_depth < 1:
+            self.updateSettings({
+                'Limit hardware looping to first step item': False
+            })
+        else:
+            self.updateSettings({
+                'Limit hardware looping to first step item': True
+            })
+
+        self.updateSettings({
+            'Number of step items in hardware loop': hardware_loop_depth,
+            'arm_trig_mode': True,
+            'trig_channel': trigger_channel,
+        })
 
     def updateInstrumentValueFullName(self, full_name, value):
         """
         This is a wrapper to updateInstrumentValue, which allows you to add full_name.
-        
+
         Args:
            full_name (str): Full name of the instrument value to be set. Format: "[Instrument name] - [Channel name]"
            value (float): The value of the parameter.
