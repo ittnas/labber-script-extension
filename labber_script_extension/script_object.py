@@ -1,13 +1,12 @@
 from collections import Iterable
-from shutil import copyfile
 import datetime
 import logging
 import numpy as np
 import sys
 import os
 import copy
-sys.path.append(os.environ.get(
-    'LABBERPATH', r'C:\Program Files\Labber\Script'))  # NOQA: E402
+sys.path.insert(0, os.environ.get(
+    'LABBERPATH', r'C:\Program Files\Labber\Script'))   # NOQA: E402
 import Labber as Labber
 from Labber import ScriptTools
 
