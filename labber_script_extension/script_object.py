@@ -627,20 +627,24 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
                 #channel['equation'] = value
                 setattr(channel, 'equation', value)
                 set_sweep_parameter(channel, {
-                                    'use_relations': True}, 'PARAM', index)
+                    'show_advanced': True,
+                    'use_relations': True
+                }, 'PARAM', index)
                 return
             if(itemType == 'VARS'):
                 # Constructs relation_parameters object
-                setattr(channel, 'relation_parameters', [])
+                #setattr(channel, 'relation_parameters', [])
+                relation_parameter_list = []
                 if 'x' not in value.keys():
-                    step_channels_relation_parameter = Labber.config.step.RelationParameter()
-                    step_channels_relation_parameter.variable = 'x'
-                    step_channels_relation_parameter.channel_name = 'Step values'
-                    channel.relation_parameters.append(step_channels_relation_parameter)
-                #channel['relation_parameters'] = []
+                    relation_parameter = Labber.config.step.RelationParameter()
+                    relation_parameter.variable = 'x'
+                    relation_parameter.channel_name = 'Step values'
+                    relation_parameter.lookup = None
+                    relation_parameter_list.append(relation_parameter)
                 for dict_param, dict_value in value.items():
                     relation_parameter = Labber.config.step.RelationParameter()
                     relation_parameter.variable = dict_param
+                    relation_parameter.lookup = Labber.config.step.LookUpTable()
                     if isinstance(dict_value, dict):
                         relation_parameter.use_lookup = True
                         # if 'interp' in dict_value.keys():
@@ -658,10 +662,12 @@ class ScriptObject(ScriptTools.MeasurementObject, Labber.Scenario):
                                 setattr(relation_parameter, relation_key, relation_value)
                     else:
                         relation_parameter.channel_name = dict_value
-                    channel.relation_parameters.append(relation_parameter)
+                        relation_parameter.lookup = None
+                    relation_parameter_list.append(relation_parameter)
                 set_sweep_parameter(channel, {
+                    'show_advanced': True,
                     'use_relations': True}, 'PARAM', index)
-
+                channel.relation_parameters = relation_parameter_list
                 return
 
             if index is None:
