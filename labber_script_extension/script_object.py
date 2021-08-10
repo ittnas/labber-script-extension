@@ -733,15 +733,23 @@ class ScriptObject(ScriptTools.MeasurementObject):
         del(self.getChannel(target)['signal_source'])
     '''
 
-    def setSignalConnectionsByDict(self, connection_dict):
+    def setSignalConnectionsByDict(self, connection_dict, skip_nones=False):
         """
         Creates signal connections from dictionary of target - source pairs.
 
         Arguments:
             connection_dict(dict) - - keys are the target channel names, values are the source channel names.
+            skip_nones (bool): if True, signal connection will not be updated if either target or source is None
         """
         for target, source in connection_dict.items():
-            self.setSignalConnection(target, source)
+            try:
+                if skip_nones:
+                    if target is not None and source is not None:
+                        self.setSignalConnection(target, source)
+                else:
+                    self.setSignalConnection(target, source)
+            except:
+                logging.warning(f'Error when setting signal connections between {target} and {source}.')
 
     def addStepChannel(self, step_channel_name, value=None):
         """
@@ -854,6 +862,37 @@ class ScriptObject(ScriptTools.MeasurementObject):
             channel['name'] = name
         self.scenario['channels'].append(channel)
 
+    def reorder_step_channels(self):
+        """
+        Reorders step channels so that channels with more than one point are swept first.
+
+        This function is still quite incomplete, and only captures the most simple orderings.
+        """
+        step_channels = step_channels=self.getStepChannels()
+
+        order = []
+        rest = []
+        for ii, step_channel in enumerate(step_channels):
+            nbr_points = 0
+            # Approximate nbr_points
+            for range_item in step_channel['step_items']:
+                if range_item['range_type'] == 'Single':
+                    nbr_points += 1
+                if range_item['range_type'] == 'Start - Stop':
+                    nbr_points += 2
+                if range_item['range_type'] == 'Center - Span':
+                    nbr_points += 2
+            if nbr_points > 1:
+                order.append(ii)
+            else:
+                rest.append(ii)
+
+        order.extend(rest)
+
+        reordered_step_channels = [step_channels[ii] for ii in order]
+        self.scenario['step_channels'] = reordered_step_channels
+
+
     def nameChannel(self, old_name, new_name):
         """ Gives a nick name to the channel.
 
@@ -890,6 +929,20 @@ class ScriptObject(ScriptTools.MeasurementObject):
                         self.getLogChannels()[ii] = new_name
                     else:
                         self.getLogChannels()[ii] = channel['instrument'] + ' - ' + channel['quantity']
+
+    def removeChannel(self, channel_name):
+        """
+        Removes the given channel from the list of channels.
+
+        Args:
+            channel_name (str): name of the channel to be removed
+        """
+        channel = self.getChannel(channel_name)
+        channels = self.getChannels()
+        try:
+            channels.remove(channel)
+        except ValueError:
+            logging.warning(f'Trying to remove channel {channel_name} but it does not exist.')
 
     def setParameter(self, name, value):
         """
@@ -1037,14 +1090,16 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         """
         if hardware_loop_depth < 0:
-            self.updateSettings({
-                'hardware_loop': False
-            })
+            self.setParameter('hardware_loop', False)
+            # self.updateSettings({
+            #     'hardware_loop': False
+            # })
             return
         else:
-            self.updateSettings({
-                'hardware_loop': True
-            })
+            self.setParameter('hardware_loop', True)
+            # self.updateSettings({
+            #     'hardware_loop': True
+            # })
 
         if hardware_loop_depth < 1:
             self.updateSettings({
@@ -1057,9 +1112,12 @@ class ScriptObject(ScriptTools.MeasurementObject):
 
         self.updateSettings({
             'Number of step items in hardware loop': hardware_loop_depth,
-            'arm_trig_mode': True,
-            'trig_channel': trigger_channel,
+            #'arm_trig_mode': True,
+            #'trig_channel': trigger_channel,
         })
+        self.setParameter('arm_trig_mode', True)
+        self.setParameter('trig_channel', trigger_channel)
+
 
     def updateInstrumentValueFullName(self, full_name, value):
         """
